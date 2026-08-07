@@ -62,21 +62,67 @@ function scoreVerdict(rate, games) {
   return "Losing record";
 }
 
+function animateWinRate(targetRate) {
+  const element = $("#win-rate");
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) {
+    element.innerHTML = `${targetRate.toFixed(1)}<small>%</small>`;
+    return;
+  }
+
+  const duration = 1100;
+  const startedAt = performance.now();
+  const tick = (now) => {
+    const progress = Math.min((now - startedAt) / duration, 1);
+    const eased = 1 - (1 - progress) ** 3;
+    element.innerHTML = `${(targetRate * eased).toFixed(1)}<small>%</small>`;
+    if (progress < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 function renderHero(summary) {
-  const roundedRate = summary.winRate.toFixed(1);
-  $("#win-rate").innerHTML = `${roundedRate}<small>%</small>`;
+  animateWinRate(summary.winRate);
   setText("#score-verdict", scoreVerdict(summary.winRate, summary.decisiveGames));
   setText("#wins", summary.wins);
   setText("#losses", summary.losses);
   setText("#matches-played", summary.total);
   const circumference = 2 * Math.PI * 94;
-  $("#ring-value").style.strokeDashoffset =
-    circumference * (1 - Math.min(summary.winRate, 100) / 100);
+  requestAnimationFrame(() => {
+    $("#ring-value").style.strokeDashoffset =
+      circumference * (1 - Math.min(summary.winRate, 100) / 100);
+  });
   $("#score-stage").setAttribute("aria-busy", "false");
   setText(
     "#freshness",
-    "Live calculation · Since 21 January 2026",
+    "Live calculation · 2026 season",
   );
+}
+
+function setupRevealAnimations() {
+  const targets = document.querySelectorAll(
+    ".stat-card, .carry-panel, .heatmap-panel, .maps-panel, .recent-panel, .vote-intro, .ballot",
+  );
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  targets.forEach((target) => target.classList.add("reveal-target"));
+
+  if (reducedMotion || !("IntersectionObserver" in window)) {
+    targets.forEach((target) => target.classList.add("is-visible"));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      }
+    },
+    { threshold: 0.12 },
+  );
+  targets.forEach((target) => observer.observe(target));
 }
 
 function renderSummaryCards(summary) {
@@ -104,15 +150,26 @@ function renderCarrySummary(summary) {
 
   const leader = PLAYERS[summary.usualCarryIndex];
   const leaderCount = summary.carryCounts[summary.usualCarryIndex];
+  const leaderAverage = summary.ratingSummaries[summary.usualCarryIndex].average;
   setText("#carry-leader", leader.name);
   setText(
     "#carry-leader-note",
-    `${leaderCount} of ${summary.ratedMatches} games with the highest rating`,
+    `${leaderCount} highest-rated games · ${formatRating(leaderAverage)} average rating`,
   );
+
+  if (summary.highestAverageIndex !== null) {
+    const averageLeader = PLAYERS[summary.highestAverageIndex];
+    const average = summary.ratingSummaries[summary.highestAverageIndex].average;
+    setText(
+      "#rating-context",
+      `Highest season average: ${averageLeader.name} (${formatRating(average)})`,
+    );
+  }
 
   const maxCount = Math.max(...summary.carryCounts, 1);
   PLAYERS.forEach((player, index) => {
     const count = summary.carryCounts[index] ?? 0;
+    const average = summary.ratingSummaries[index].average;
     const row = document.createElement("div");
     row.className = `carry-row carry-player-${index}`;
 
@@ -121,7 +178,7 @@ function renderCarrySummary(summary) {
     const name = document.createElement("b");
     name.textContent = player.name;
     const value = document.createElement("span");
-    value.textContent = `${count} game${count === 1 ? "" : "s"}`;
+    value.textContent = `${count} top · ${formatRating(average)} avg`;
     head.append(name, value);
 
     const track = document.createElement("div");
@@ -133,6 +190,11 @@ function renderCarrySummary(summary) {
     row.append(head, track);
     container.append(row);
   });
+}
+
+function formatRating(rating) {
+  if (!Number.isFinite(rating)) return "—";
+  return `${rating >= 0 ? "+" : ""}${rating.toFixed(4)}`;
 }
 
 function renderHeatmap(matches) {
@@ -261,7 +323,7 @@ function renderRecentMatches(results) {
       carryName.textContent = PLAYERS[result.bestPlayerIndex].name;
       const rating = document.createElement("span");
       rating.className = "match-rating";
-      rating.textContent = `${result.bestRating >= 0 ? "+" : ""}${result.bestRating.toFixed(3)}`;
+      rating.textContent = formatRating(result.bestRating);
       carryCell.append(carryName, rating);
     }
     row.append(resultCell, mapCell, scoreCell, dateCell, killsCell, carryCell);
@@ -381,6 +443,7 @@ async function submitBallot() {
 }
 
 async function initialize() {
+  setupRevealAnimations();
   $("#voter-name").value = localStorage.getItem("three-stack-voter-name") ?? "";
   $("#voter-name").addEventListener("input", updateVoteControls);
   $("#submit-ballot").addEventListener("click", submitBallot);
@@ -397,7 +460,7 @@ async function initialize() {
 
     if (!state.matches.length) {
       showStatus(
-        "No shared competitive matches were found from 21 January 2026 through today. Check that all three profiles are registered with Leetify and publicly visible.",
+        "No shared competitive matches were found in the 2026 season. Check that all three profiles are registered with Leetify and publicly visible.",
       );
     }
 
@@ -407,6 +470,7 @@ async function initialize() {
     renderHeatmap(state.matches);
     renderMapBars(state.summary.maps);
     renderRecentMatches(state.summary.results);
+    document.body.classList.add("data-ready");
 
     if (state.matches[0]) {
       const latest = new Date(state.matches[0].finished_at).toLocaleDateString(undefined, {

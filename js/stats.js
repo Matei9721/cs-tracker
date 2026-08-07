@@ -124,6 +124,36 @@ export function aggregateMatches(matches) {
   const usualCarryIndex = ratedMatches
     ? carryCounts.indexOf(Math.max(...carryCounts))
     : null;
+  const ratingSummaries = carryCounts.map((topGames, playerIndex) => {
+    const ratings = results
+      .map((result) => Number(result.match.playerStats?.[playerIndex]?.leetify_rating))
+      .filter(Number.isFinite)
+      .sort((a, b) => a - b);
+    const middle = Math.floor(ratings.length / 2);
+    const median = ratings.length
+      ? ratings.length % 2
+        ? ratings[middle]
+        : (ratings[middle - 1] + ratings[middle]) / 2
+      : null;
+    return {
+      topGames,
+      games: ratings.length,
+      average: ratings.length
+        ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
+        : null,
+      median,
+    };
+  });
+  const highestAverageIndex = ratingSummaries.some((summary) => summary.average !== null)
+    ? ratingSummaries.reduce(
+        (bestIndex, summary, index, all) =>
+          summary.average !== null &&
+          (bestIndex === null || summary.average > all[bestIndex].average)
+            ? index
+            : bestIndex,
+        null,
+      )
+    : null;
 
   return {
     total: matches.length,
@@ -141,6 +171,8 @@ export function aggregateMatches(matches) {
     carryCounts,
     ratedMatches,
     usualCarryIndex,
+    ratingSummaries,
+    highestAverageIndex,
     results,
   };
 }

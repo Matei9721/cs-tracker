@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#090b0c" />
+    <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
     <meta
       name="description"
       content="The shared 2026 CS2 record for Matei, BMO, and Jesus did nothing wrong."
@@ -11,14 +13,14 @@
     <meta property="og:title" content="Three Stack — CS2 record" />
     <meta
       property="og:description"
-      content="Competitive results since 21 January 2026, activity patterns, carry ratings, and the next-map vote."
+      content="The trio's 2026 competitive results, activity patterns, carry ratings, and next-map vote."
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Three Stack — CS2 record" />
     <meta
       name="twitter:description"
-      content="Competitive results since 21 January 2026, activity patterns, carry ratings, and the next-map vote."
+      content="The trio's 2026 competitive results, activity patterns, carry ratings, and next-map vote."
     />
     <title>Three Stack — CS2 record</title>
     <link rel="preconnect" href="https://api-public.cs-prod.leetify.com" />
@@ -44,32 +46,33 @@
     <main id="top">
       <section class="hero" id="record" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="eyebrow">2026 season / Since 21 January</p>
+          <p class="eyebrow">2026 season</p>
           <h1 id="hero-title">Our shared<br /><em>record.</em></h1>
           <p class="intro">
-            Every competitive match that Matei, BMO, and Jesus did nothing wrong
-            played together from 21 January 2026 through today.
+            Every 2026 competitive match that Matei, BMO, and Jesus did nothing
+            wrong played together.
           </p>
 
           <div class="squad" aria-label="Tracked players">
             <div class="squad-member">
-              <span class="avatar avatar-you">Y</span>
+              <span class="avatar avatar-you"><img src="assets/players/matei.png" alt="" /></span>
               <span><b>Matei</b><small>Player</small></span>
             </div>
             <span class="plus" aria-hidden="true">+</span>
             <div class="squad-member">
-              <span class="avatar avatar-bmo">B</span>
+              <span class="avatar avatar-bmo"><img src="assets/players/bmo.png" alt="" /></span>
               <span><b>BMO</b><small>Player</small></span>
             </div>
             <span class="plus" aria-hidden="true">+</span>
             <div class="squad-member">
-              <span class="avatar avatar-jesus">J</span>
+              <span class="avatar avatar-jesus"><img src="assets/players/jesus.png" alt="" /></span>
               <span><b>Jesus did nothing wrong</b><small>Player</small></span>
             </div>
           </div>
         </div>
 
         <div class="score-stage" aria-live="polite" aria-busy="true" id="score-stage">
+          <span class="scan-beam" aria-hidden="true"></span>
           <div class="crosshair" aria-hidden="true">
             <span class="crosshair-h"></span><span class="crosshair-v"></span>
           </div>
@@ -101,7 +104,7 @@
             <p class="eyebrow">Team stats / 01</p>
             <h2 id="stats-title">This season.</h2>
           </div>
-          <p>All figures cover shared competitive matches since 21 January 2026.</p>
+          <p>All figures cover shared competitive matches in the 2026 season.</p>
         </div>
 
         <div class="stat-grid">
@@ -109,7 +112,7 @@
             <span class="card-index">01</span>
             <p>Competitive matches</p>
             <strong id="total-games">—</strong>
-            <small>played together since 21 January</small>
+            <small>played together this season</small>
           </article>
           <article class="stat-card">
             <span class="card-index">02</span>
@@ -150,13 +153,14 @@
             </div>
             <div class="carry-breakdown" id="carry-breakdown"></div>
           </div>
+          <p class="rating-context" id="rating-context">Comparing season averages…</p>
         </article>
 
         <div class="evidence-grid">
           <article class="panel heatmap-panel">
             <div class="panel-heading">
               <div>
-                <p class="kicker">21 January 2026 → Today</p>
+                <p class="kicker">2026 season</p>
                 <h3>Games by day</h3>
               </div>
               <div class="heat-legend" aria-label="Heatmap intensity: less to more">

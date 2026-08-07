@@ -22,7 +22,7 @@ Build and maintain a simple, visually distinctive Counter-Strike 2 dashboard for
 - Include only `matchmaking_competitive` games finished on or after 21 January 2026 and no later than the visitor's current time.
 - Determine the trio's result from the primary player's `initial_team_number` and `team_scores`.
 - Win rate is `wins / (wins + losses)`. Ties are excluded from both numerator and denominator, while they may be shown separately for transparency.
-- Use each player's unmodified `leetify_rating` to identify the highest-rated member of the trio in each game and summarize who most often has the highest rating.
+- Use each player's unmodified `leetify_rating` to identify the highest-rated member of the trio in each game. Show both highest-rating frequency and season-average rating so the carry summary does not overstate a single measure.
 - Do not cache or store Leetify match payloads. Re-fetch them when the page loads.
 
 ## Map voting

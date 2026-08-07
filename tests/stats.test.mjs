@@ -94,6 +94,10 @@ test("excludes ties from the win-rate denominator", () => {
   assert.equal(summary.teamKd, 35 / 30);
   assert.deepEqual(summary.carryCounts, [0, 3, 0]);
   assert.equal(summary.usualCarryIndex, 1);
+  assert.equal(summary.ratingSummaries[0].average, 0.01);
+  assert.equal(summary.ratingSummaries[1].average, 0.08);
+  assert.equal(summary.ratingSummaries[2].average, -0.02);
+  assert.equal(summary.highestAverageIndex, 1);
 });
 
 test("identifies the player with the highest unmodified Leetify rating", () => {
