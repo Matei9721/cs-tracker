@@ -1,6 +1,6 @@
-# Three Stack
+# Romanian CS Forces
 
-A static Counter-Strike 2 dashboard for three friends. It reads live match history from the Leetify Public API, calculates the trio's competitive record since 21 January 2026, visualizes play patterns and carry ratings, and uses Supabase for a shared map ballot.
+A static Counter-Strike 2 dashboard for three Romanian friends. It reads live match history from the Leetify Public API, calculates the trio's competitive record since 21 January 2026, visualizes play patterns and carry ratings, and uses Supabase for a shared map ballot.
 
 The site has no application server. It is designed to run entirely on GitHub Pages.
 
@@ -19,7 +19,7 @@ Until this SQL is run, the statistics dashboard will work normally and the votin
 3. Under **Build and deployment**, select **GitHub Actions** as the source.
 4. Push to `main`, or run the **Deploy GitHub Pages** workflow manually.
 
-The publishable Supabase key in `js/config.js` is intentionally safe to ship in a browser. Never put a Supabase `service_role` key in this repository.
+The publishable Supabase key and Leetify Public API key in `js/config.js` are intentionally safe to ship in a browser. The Leetify key is a read-only application identifier that raises the Public API rate limit; it does not grant account or write access. Never put a Supabase `service_role` key, database password, or other privileged secret in this repository.
 
 ## Local preview
 

@@ -4,6 +4,8 @@
 
 Build and maintain a simple, visually distinctive Counter-Strike 2 dashboard for the three configured Steam accounts. The primary product moment is their shared competitive win rate for the current tracked season, which begins on 21 January 2026. Secondary sections show useful shared-game statistics and let visitors vote for up to three maps to play next.
 
+The public-facing brand is `Romanian CS Forces`; do not reintroduce the previous `Three Stack` name. Refer to the season-end commitment as `the bet`, not `the pact`.
+
 The season-end stakes are part of the product story: below 66% activates a winter canal jump, while below 50% activates both the canal jump and an Amsterdam-to-Groningen bike ride without maps. Keep the stakes experience close to the primary win-rate display.
 
 ## Hosting and architecture
@@ -12,7 +14,7 @@ The season-end stakes are part of the product story: below 66% activates a winte
 - Do not add an application backend, server-rendered runtime, paid service, or required scheduled data scraper.
 - Fetch current Leetify data directly in the browser. The public endpoint currently supports browser CORS.
 - Use Supabase only for shared map-vote persistence.
-- A Supabase publishable/anonymous key may be present in client code. Never commit a `service_role` key, database password, Leetify private API key, or other secret.
+- Supabase publishable/anonymous keys and the read-only Leetify Public API application identifier may be present in client code. The Leetify identifier only raises the public-data rate limit and is intentionally public. Never commit a Supabase `service_role` key, database password, account credential, write-capable API key, or other privileged secret.
 - Keep GitHub Pages deployment in `.github/workflows/pages.yml`.
 
 ## Players and match rules

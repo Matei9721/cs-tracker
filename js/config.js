@@ -7,6 +7,10 @@ export const PLAYERS = [
 export const LEETIFY_MATCHES_URL =
   "https://api-public.cs-prod.leetify.com/v3/profile/matches";
 
+// This is an intentionally public, read-only Leetify application identifier.
+// It only raises the Public API rate limit; it is not an account or write-access secret.
+export const LEETIFY_PUBLIC_API_KEY = "a28f2619-cb09-475d-9d7d-47b17a900f7d";
+
 export const SUPABASE_URL = "https://chchllvulagliftmngrw.supabase.co";
 export const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_bWQ3vJNo4mBUCemzRHrn4g_zabaH7aS";

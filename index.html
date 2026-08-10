@@ -4,40 +4,54 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#090b0c" />
-    <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="assets/favicon.svg?v=20260810-crosshair"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="64x64"
+      href="assets/favicon.png?v=20260810-crosshair"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="assets/apple-touch-icon.png?v=20260810-crosshair"
+    />
     <meta
       name="description"
       content="The shared 2026 CS2 record for Matei, Bozarul, and Jesus did nothing wrong."
     />
-    <meta property="og:title" content="Three Stack — CS2 record" />
+    <meta property="og:title" content="Romanian CS Forces — CS2 record" />
     <meta
       property="og:description"
       content="Our 2026 competitive results, activity patterns, carry rankings, and next-map vote."
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Three Stack — CS2 record" />
+    <meta name="twitter:title" content="Romanian CS Forces — CS2 record" />
     <meta
       name="twitter:description"
       content="Our 2026 competitive results, activity patterns, carry rankings, and next-map vote."
     />
-    <title>Three Stack — CS2 record</title>
+    <title>Romanian CS Forces — CS2 record</title>
     <link rel="preconnect" href="https://api-public.cs-prod.leetify.com" />
     <link rel="preconnect" href="https://chchllvulagliftmngrw.supabase.co" />
-    <link rel="stylesheet" href="styles.css?v=20260810-carry-metrics" />
-    <script type="module" src="js/app.js?v=20260810-carry-metrics"></script>
+    <link rel="stylesheet" href="styles.css?v=20260810-art-sizing" />
+    <script type="module" src="js/app.js?v=20260810-romanian-forces"></script>
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
     <header class="site-header">
-      <a class="wordmark" href="#top" aria-label="Three Stack home">
-        <span class="wordmark-mark" aria-hidden="true">3</span>
-        <span>THREE<br />STACK</span>
+      <a class="wordmark" href="#top" aria-label="Romanian CS Forces home">
+        <img class="wordmark-logo" src="assets/brand/romanian-cs-forces-mark.png" alt="" />
+        <span>ROMANIAN<br />CS FORCES</span>
       </a>
       <nav aria-label="Main navigation">
         <a href="#record">Record</a>
-        <a href="#stakes">The stakes</a>
+        <a href="#stakes">The bet</a>
         <a href="#stats">Team stats</a>
         <a href="#vote">Next map</a>
       </nav>
@@ -101,8 +115,8 @@
 
       <section class="challenge-section" id="stakes" aria-labelledby="stakes-title" aria-busy="true">
         <div class="challenge-intro">
-          <p class="eyebrow">The pact / 01</p>
-          <h2 id="stakes-title">Season-end<br /><em>stakes.</em></h2>
+          <p class="eyebrow">The bet / 01</p>
+          <h2 id="stakes-title">Season-end<br /><em>bet.</em></h2>
           <p>
             Our final win rate decides what we have to do. Below 66% means we
             jump into a canal in winter. Below 50% also means we bike from
@@ -142,6 +156,30 @@
           <button class="live-rate-button" id="use-live-rate" type="button" disabled>
             Use live rate
           </button>
+
+          <div class="challenge-visuals" id="challenge-visuals" data-state="loading">
+            <div class="challenge-clear-visual" id="challenge-clear-visual" hidden>
+              <span>66% and up</span>
+              <strong>Bet cleared.</strong>
+              <small>No punishment unlocked.</small>
+            </div>
+            <figure class="challenge-visual" id="canal-visual" hidden>
+              <img
+                src="assets/stakes/winter-canal-jump.webp"
+                alt="Stick figure jumping into a canal beneath a crosshair"
+                loading="lazy"
+              />
+              <figcaption><span>01 / Canal</span><b>Winter jump active</b></figcaption>
+            </figure>
+            <figure class="challenge-visual" id="bike-visual" hidden>
+              <img
+                src="assets/stakes/mapless-bike-ride.webp"
+                alt="Stick figure cycling down a long road without navigation"
+                loading="lazy"
+              />
+              <figcaption><span>02 / Bike</span><b>Mapless ride active</b></figcaption>
+            </figure>
+          </div>
 
           <div class="challenge-cards">
             <article class="challenge-card" id="canal-challenge">
@@ -209,7 +247,7 @@
             </div>
             <div class="carry-controls">
               <label class="carry-metric-control" for="carry-metric">
-                Rank our games by
+                <span>Rank our games by</span>
                 <select id="carry-metric">
                   <option value="leetify_rating" selected>Leetify Rating</option>
                   <option value="score">Score</option>
@@ -336,7 +374,10 @@
 
     <footer>
       <div>
-        <a class="wordmark footer-mark" href="#top"><span class="wordmark-mark">3</span><span>THREE STACK</span></a>
+        <a class="wordmark footer-mark" href="#top">
+          <img class="wordmark-logo" src="assets/brand/romanian-cs-forces-mark.png" alt="" />
+          <span>ROMANIAN CS FORCES</span>
+        </a>
         <p>Our games. Our shared competitive record.</p>
       </div>
       <div class="attribution">

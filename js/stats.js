@@ -137,10 +137,19 @@ export function aggregatePlayerPerformance(matches, playerCount = 3) {
         sum.totalDamage += Number(stats.total_damage) || 0;
         sum.rounds += Number(stats.rounds_count) || 0;
         sum.roundsSurvived += Number(stats.rounds_survived) || 0;
-        sum.counterStrafingShots += Number(stats.counter_strafing_shots_all) || 0;
-        sum.goodCounterStrafingShots += Number(stats.counter_strafing_shots_good) || 0;
         sum.tradeOpportunities += Number(stats.trade_kill_opportunities) || 0;
         sum.tradeAttempts += Number(stats.trade_kill_attempts) || 0;
+        const heThrown = Number(stats.he_thrown) || 0;
+        const flashbangThrown = Number(stats.flashbang_thrown) || 0;
+        sum.utilityThrown +=
+          heThrown +
+          flashbangThrown +
+          (Number(stats.smoke_thrown) || 0) +
+          (Number(stats.molotov_thrown) || 0);
+        sum.enemyFlashes += Number(stats.flashbang_hit_foe) || 0;
+        sum.flashbangThrown += flashbangThrown;
+        sum.heFoeDamage += (Number(stats.he_foes_damage_avg) || 0) * heThrown;
+        sum.heThrown += heThrown;
         return sum;
       },
       {
@@ -151,10 +160,13 @@ export function aggregatePlayerPerformance(matches, playerCount = 3) {
         totalDamage: 0,
         rounds: 0,
         roundsSurvived: 0,
-        counterStrafingShots: 0,
-        goodCounterStrafingShots: 0,
         tradeOpportunities: 0,
         tradeAttempts: 0,
+        utilityThrown: 0,
+        enemyFlashes: 0,
+        flashbangThrown: 0,
+        heFoeDamage: 0,
+        heThrown: 0,
       },
     );
 
@@ -164,10 +176,10 @@ export function aggregatePlayerPerformance(matches, playerCount = 3) {
         totals.rounds > 0 ? totals.totalDamage / totals.rounds : null,
       headshotKillPercentage: percentage(totals.headshotKills, totals.kills),
       survivalPercentage: percentage(totals.roundsSurvived, totals.rounds),
-      goodCounterStrafePercentage: percentage(
-        totals.goodCounterStrafingShots,
-        totals.counterStrafingShots,
-      ),
+      utilityPerRound: totals.rounds > 0 ? totals.utilityThrown / totals.rounds : null,
+      enemiesFlashedPerFlashbang:
+        totals.flashbangThrown > 0 ? totals.enemyFlashes / totals.flashbangThrown : null,
+      averageHeFoeDamage: totals.heThrown > 0 ? totals.heFoeDamage / totals.heThrown : null,
       tradeAttemptPercentage: percentage(totals.tradeAttempts, totals.tradeOpportunities),
     };
   });

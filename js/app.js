@@ -1,10 +1,11 @@
 import {
   COMPETITIVE_SOURCE,
   LEETIFY_MATCHES_URL,
+  LEETIFY_PUBLIC_API_KEY,
   MAX_MAP_PICKS,
   PLAYERS,
   SEASON_START,
-} from "./config.js?v=20260810-carry-metrics";
+} from "./config.js?v=20260810-leetify-key";
 import {
   activityByDay,
   aggregateMatches,
@@ -14,7 +15,7 @@ import {
   dateKey,
   formatLeetifyRating,
   formatMapName,
-} from "./stats.js?v=20260810-carry-metrics";
+} from "./stats.js?v=20260810-romanian-forces";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -31,15 +32,15 @@ const state = {
 
 const CHALLENGE_LABELS = {
   clear: {
-    title: "No challenge",
-    note: "66% or higher clears the pact.",
+    title: "Bet cleared",
+    note: "66% or higher means no punishment.",
   },
   canal: {
     title: "Winter canal jump",
     note: "The canal is active. The mapless bike ride stays off.",
   },
   both: {
-    title: "Both challenges",
+    title: "Both punishments",
     note: "Canal jump plus Amsterdam to Groningen by bike, without maps.",
   },
 };
@@ -98,7 +99,12 @@ function showStatus(message) {
 async function fetchMatchHistory(player) {
   const url = new URL(LEETIFY_MATCHES_URL);
   url.searchParams.set("id", player.id);
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      _leetify_key: LEETIFY_PUBLIC_API_KEY,
+    },
+  });
   if (!response.ok) {
     throw new Error(`${player.name}'s Leetify history returned ${response.status}`);
   }
@@ -310,10 +316,22 @@ function renderStatLeaders(summary) {
       format: formatPercentage,
     },
     {
-      key: "goodCounterStrafePercentage",
-      label: "Good counter-strafing shots",
-      note: "good shots / tracked counter-strafing shots",
-      format: formatPercentage,
+      key: "utilityPerRound",
+      label: "Best utility usage",
+      note: "grenades thrown / round · flash and HE impact below",
+      format: (value) => (Number.isFinite(value) ? value.toFixed(2) : "—"),
+      comparison: (player) => {
+        const usage = Number.isFinite(player.utilityPerRound)
+          ? `${player.utilityPerRound.toFixed(2)}/round`
+          : "—";
+        const flashes = Number.isFinite(player.enemiesFlashedPerFlashbang)
+          ? `${player.enemiesFlashedPerFlashbang.toFixed(2)} enemies/flash`
+          : "— enemies/flash";
+        const heDamage = Number.isFinite(player.averageHeFoeDamage)
+          ? `${player.averageHeFoeDamage.toFixed(1)} HE damage`
+          : "— HE damage";
+        return `${usage} · ${flashes} · ${heDamage}`;
+      },
     },
     {
       key: "tradeAttemptPercentage",
@@ -334,7 +352,12 @@ function renderStatLeaders(summary) {
     const leaderIndex = leaderIndices[0] ?? 0;
     const leaderNames = leaderIndices.map((index) => PLAYERS[index].name).join(" + ");
     const comparisons = PLAYERS.map((player, index) => ({ player, index }))
-      .map(({ player, index }) => `${player.name}: ${metric.format(values[index])}`)
+      .map(({ player, index }) => {
+        const detail = metric.comparison
+          ? metric.comparison(summary.playerPerformance[index])
+          : metric.format(values[index]);
+        return `${player.name}: ${detail}`;
+      })
       .join(" · ");
 
     const card = document.createElement("article");
@@ -381,6 +404,13 @@ function updateChallengeDisplay(rate, isLiveRate = false) {
     card.classList.toggle("is-active", active);
     card.querySelector(".challenge-status").textContent = active ? "On" : "Off";
   }
+
+  const visuals = $("#challenge-visuals");
+  visuals.dataset.state = challenge.level;
+  visuals.classList.toggle("is-double", challenge.level === "both");
+  $("#challenge-clear-visual").hidden = challenge.level !== "clear";
+  $("#canal-visual").hidden = !challenge.canal;
+  $("#bike-visual").hidden = !challenge.bike;
 }
 
 function renderChallengeSimulator(winRate) {

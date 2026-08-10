@@ -178,7 +178,7 @@ test("formats raw Leetify ratings on the website's times-100 display scale", () 
   assert.equal(formatLeetifyRating(null), "—");
 });
 
-test("aggregates the trio's derived performance percentages", () => {
+test("aggregates the trio's derived performance metrics", () => {
   const performance = aggregatePlayerPerformance([
     {
       playerStats: [
@@ -190,8 +190,6 @@ test("aggregates the trio's derived performance percentages", () => {
           total_damage: 800,
           rounds_count: 10,
           rounds_survived: 3,
-          counter_strafing_shots_all: 20,
-          counter_strafing_shots_good: 12,
           trade_kill_opportunities: 10,
           trade_kill_attempts: 8,
         },
@@ -203,10 +201,14 @@ test("aggregates the trio's derived performance percentages", () => {
           total_damage: 900,
           rounds_count: 10,
           rounds_survived: 4,
-          counter_strafing_shots_all: 10,
-          counter_strafing_shots_good: 8,
           trade_kill_opportunities: 10,
           trade_kill_attempts: 9,
+          he_thrown: 2,
+          he_foes_damage_avg: 30,
+          molotov_thrown: 1,
+          smoke_thrown: 3,
+          flashbang_thrown: 4,
+          flashbang_hit_foe: 6,
         },
         {
           total_kills: 5,
@@ -216,8 +218,6 @@ test("aggregates the trio's derived performance percentages", () => {
           total_damage: 700,
           rounds_count: 10,
           rounds_survived: 2,
-          counter_strafing_shots_all: 10,
-          counter_strafing_shots_good: 7,
           trade_kill_opportunities: 10,
           trade_kill_attempts: 7,
         },
@@ -229,7 +229,9 @@ test("aggregates the trio's derived performance percentages", () => {
   assert.equal(performance[1].accuracyPercentage, 30);
   assert.equal(performance[1].averageDamagePerRound, 90);
   assert.equal(performance[1].survivalPercentage, 40);
-  assert.equal(performance[1].goodCounterStrafePercentage, 80);
+  assert.equal(performance[1].utilityPerRound, 1);
+  assert.equal(performance[1].enemiesFlashedPerFlashbang, 1.5);
+  assert.equal(performance[1].averageHeFoeDamage, 30);
   assert.equal(performance[1].tradeAttemptPercentage, 90);
 });
 
