@@ -1,14 +1,31 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { PLAYERS } from "../js/config.js";
 import {
   aggregateMatches,
+  aggregatePlayerPerformance,
+  averageGamesPerNight,
   bestRatedPlayerForMatch,
   buildSharedMatches,
+  challengeForWinRate,
+  formatLeetifyRating,
   formatMapName,
   resultForMatch,
+  summarizeMatchMetricLeaders,
 } from "../js/stats.js";
 
 const players = ["1", "2", "3"];
+
+test("keeps the configured display names attached to the correct Steam IDs", () => {
+  assert.deepEqual(
+    PLAYERS.map(({ id, name }) => ({ id, name })),
+    [
+      { id: "76561198038593465", name: "Matei" },
+      { id: "76561198078108941", name: "Bozarul" },
+      { id: "76561198060030545", name: "Jesus did nothing wrong" },
+    ],
+  );
+});
 
 function appearance(id, playerId, finishedAt, options = {}) {
   return {
@@ -113,6 +130,127 @@ test("identifies the player with the highest unmodified Leetify rating", () => {
     bestPlayerIndex: 1,
     bestRating: 0.0342,
   });
+});
+
+test("ranks per-match leaders by rating, score, or total damage", () => {
+  const matches = [
+    {
+      playerStats: [
+        { leetify_rating: 0.03, score: 40, total_damage: 900 },
+        { leetify_rating: 0.02, score: 50, total_damage: 1000 },
+        { leetify_rating: 0.01, score: 30, total_damage: 800 },
+      ],
+    },
+    {
+      playerStats: [
+        { leetify_rating: -0.01, score: 45, total_damage: 700 },
+        { leetify_rating: 0.01, score: 35, total_damage: 850 },
+        { leetify_rating: 0.04, score: 55, total_damage: 1200 },
+      ],
+    },
+  ];
+
+  assert.deepEqual(summarizeMatchMetricLeaders(matches, "leetify_rating").counts, [1, 0, 1]);
+  assert.deepEqual(summarizeMatchMetricLeaders(matches, "score").counts, [0, 1, 1]);
+  assert.deepEqual(summarizeMatchMetricLeaders(matches, "total_damage").counts, [0, 1, 1]);
+});
+
+test("credits every player tied for a match metric lead", () => {
+  const summary = summarizeMatchMetricLeaders([
+    {
+      playerStats: [
+        { score: 50 },
+        { score: 50 },
+        { score: 40 },
+      ],
+    },
+  ], "score");
+
+  assert.deepEqual(summary.counts, [1, 1, 0]);
+  assert.equal(summary.gamesWithLeader, 1);
+  assert.equal(summary.leaderIndex, 0);
+});
+
+test("formats raw Leetify ratings on the website's times-100 display scale", () => {
+  assert.equal(formatLeetifyRating(0.0101), "+1.01");
+  assert.equal(formatLeetifyRating(-0.0289), "-2.89");
+  assert.equal(formatLeetifyRating(0), "+0.00");
+  assert.equal(formatLeetifyRating(null), "—");
+});
+
+test("aggregates the trio's derived performance percentages", () => {
+  const performance = aggregatePlayerPerformance([
+    {
+      playerStats: [
+        {
+          total_kills: 10,
+          total_hs_kills: 3,
+          shots_fired: 100,
+          shots_hit_foe: 20,
+          total_damage: 800,
+          rounds_count: 10,
+          rounds_survived: 3,
+          counter_strafing_shots_all: 20,
+          counter_strafing_shots_good: 12,
+          trade_kill_opportunities: 10,
+          trade_kill_attempts: 8,
+        },
+        {
+          total_kills: 8,
+          total_hs_kills: 4,
+          shots_fired: 80,
+          shots_hit_foe: 24,
+          total_damage: 900,
+          rounds_count: 10,
+          rounds_survived: 4,
+          counter_strafing_shots_all: 10,
+          counter_strafing_shots_good: 8,
+          trade_kill_opportunities: 10,
+          trade_kill_attempts: 9,
+        },
+        {
+          total_kills: 5,
+          total_hs_kills: 2,
+          shots_fired: 50,
+          shots_hit_foe: 5,
+          total_damage: 700,
+          rounds_count: 10,
+          rounds_survived: 2,
+          counter_strafing_shots_all: 10,
+          counter_strafing_shots_good: 7,
+          trade_kill_opportunities: 10,
+          trade_kill_attempts: 7,
+        },
+      ],
+    },
+  ]);
+
+  assert.equal(performance[1].headshotKillPercentage, 50);
+  assert.equal(performance[1].accuracyPercentage, 30);
+  assert.equal(performance[1].averageDamagePerRound, 90);
+  assert.equal(performance[1].survivalPercentage, 40);
+  assert.equal(performance[1].goodCounterStrafePercentage, 80);
+  assert.equal(performance[1].tradeAttemptPercentage, 90);
+});
+
+test("applies the challenge thresholds exactly", () => {
+  assert.deepEqual(challengeForWinRate(66), { level: "clear", canal: false, bike: false });
+  assert.deepEqual(challengeForWinRate(65.9), { level: "canal", canal: true, bike: false });
+  assert.deepEqual(challengeForWinRate(50), { level: "canal", canal: true, bike: false });
+  assert.deepEqual(challengeForWinRate(49.9), { level: "both", canal: true, bike: true });
+});
+
+test("calculates average games per playing session across midnight", () => {
+  const matches = [
+    { finished_at: "2026-08-01T22:00:00Z" },
+    { finished_at: "2026-08-01T23:30:00Z" },
+    { finished_at: "2026-08-02T01:00:00Z" },
+    { finished_at: "2026-08-03T18:00:00Z" },
+    { finished_at: "2026-08-03T19:30:00Z" },
+    { finished_at: "2026-08-03T21:00:00Z" },
+  ];
+  assert.equal(averageGamesPerNight(matches), 3);
+  assert.equal(averageGamesPerNight([]), 0);
 });
 
 test("formats Leetify map identifiers for display", () => {

@@ -4,6 +4,8 @@
 
 Build and maintain a simple, visually distinctive Counter-Strike 2 dashboard for the three configured Steam accounts. The primary product moment is their shared competitive win rate for the current tracked season, which begins on 21 January 2026. Secondary sections show useful shared-game statistics and let visitors vote for up to three maps to play next.
 
+The season-end stakes are part of the product story: below 66% activates a winter canal jump, while below 50% activates both the canal jump and an Amsterdam-to-Groningen bike ride without maps. Keep the stakes experience close to the primary win-rate display.
+
 ## Hosting and architecture
 
 - The production site must remain a static site hosted for free on GitHub Pages.
@@ -16,14 +18,16 @@ Build and maintain a simple, visually distinctive Counter-Strike 2 dashboard for
 ## Players and match rules
 
 - Primary player Steam64 ID: `76561198038593465`.
-- Friend Steam64 IDs: `76561198060030545` and `76561198078108941`.
-- Display names: `Matei`, `BMO`, and `Jesus did nothing wrong`. Do not label the primary player as `You` or infer labels from changing Steam aliases.
+- Bozarul Steam64 ID: `76561198078108941`.
+- Jesus did nothing wrong Steam64 ID: `76561198060030545`.
+- Display names: `Matei`, `Bozarul`, and `Jesus did nothing wrong`. Do not label the primary player as `You` or infer labels from changing Steam aliases.
 - A shared game is a Leetify match whose match ID appears in all three players' histories.
 - Include only `matchmaking_competitive` games finished on or after 21 January 2026 and no later than the visitor's current time.
 - Determine the trio's result from the primary player's `initial_team_number` and `team_scores`.
 - Win rate is `wins / (wins + losses)`. Ties are excluded from both numerator and denominator, while they may be shown separately for transparency.
-- Use each player's unmodified `leetify_rating` to identify the highest-rated member of the trio in each game. Show both highest-rating frequency and season-average rating so the carry summary does not overstate a single measure.
+- Use each player's unmodified `leetify_rating` to identify the highest-rated member of the trio in each game. Multiply ratings by 100 only for display so the values match Leetify's website scale. Show both highest-rating frequency and season-average rating so the carry summary does not overstate a single measure.
 - Do not cache or store Leetify match payloads. Re-fetch them when the page loads.
+- Average games per playing night groups consecutive shared matches into one session when no gap exceeds six hours, so sessions crossing midnight are not split.
 
 ## Map voting
 
@@ -39,7 +43,7 @@ Build and maintain a simple, visually distinctive Counter-Strike 2 dashboard for
 - State that the site is an independent community project, not affiliated with or sponsored by Leetify.
 - Show a legible `Data Provided by Leetify` link back to `https://leetify.com/`.
 - Include `View on Leetify` links near match data where practical.
-- Do not rename, rescale, or otherwise misrepresent Leetify-provided metrics.
+- Do not rename or otherwise misrepresent Leetify-provided metrics. The documented `leetify_rating` ×100 display conversion is the only approved rescaling.
 
 ## Quality bar
 

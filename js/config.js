@@ -1,7 +1,7 @@
 export const PLAYERS = [
   { id: "76561198038593465", name: "Matei" },
-  { id: "76561198060030545", name: "BMO" },
-  { id: "76561198078108941", name: "Jesus did nothing wrong" },
+  { id: "76561198078108941", name: "Bozarul" },
+  { id: "76561198060030545", name: "Jesus did nothing wrong" },
 ];
 
 export const LEETIFY_MATCHES_URL =

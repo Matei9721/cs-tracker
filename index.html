@@ -8,25 +8,25 @@
     <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
     <meta
       name="description"
-      content="The shared 2026 CS2 record for Matei, BMO, and Jesus did nothing wrong."
+      content="The shared 2026 CS2 record for Matei, Bozarul, and Jesus did nothing wrong."
     />
     <meta property="og:title" content="Three Stack — CS2 record" />
     <meta
       property="og:description"
-      content="The trio's 2026 competitive results, activity patterns, carry ratings, and next-map vote."
+      content="Our 2026 competitive results, activity patterns, carry rankings, and next-map vote."
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Three Stack — CS2 record" />
     <meta
       name="twitter:description"
-      content="The trio's 2026 competitive results, activity patterns, carry ratings, and next-map vote."
+      content="Our 2026 competitive results, activity patterns, carry rankings, and next-map vote."
     />
     <title>Three Stack — CS2 record</title>
     <link rel="preconnect" href="https://api-public.cs-prod.leetify.com" />
     <link rel="preconnect" href="https://chchllvulagliftmngrw.supabase.co" />
-    <link rel="stylesheet" href="styles.css" />
-    <script type="module" src="js/app.js"></script>
+    <link rel="stylesheet" href="styles.css?v=20260810-carry-metrics" />
+    <script type="module" src="js/app.js?v=20260810-carry-metrics"></script>
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -37,6 +37,7 @@
       </a>
       <nav aria-label="Main navigation">
         <a href="#record">Record</a>
+        <a href="#stakes">The stakes</a>
         <a href="#stats">Team stats</a>
         <a href="#vote">Next map</a>
       </nav>
@@ -49,24 +50,24 @@
           <p class="eyebrow">2026 season</p>
           <h1 id="hero-title">Our shared<br /><em>record.</em></h1>
           <p class="intro">
-            Every 2026 competitive match that Matei, BMO, and Jesus did nothing
-            wrong played together.
+            Every 2026 competitive match we played together: Matei, Bozarul,
+            and Jesus did nothing wrong.
           </p>
 
           <div class="squad" aria-label="Tracked players">
             <div class="squad-member">
-              <span class="avatar avatar-you"><img src="assets/players/matei.png" alt="" /></span>
-              <span><b>Matei</b><small>Player</small></span>
-            </div>
-            <span class="plus" aria-hidden="true">+</span>
-            <div class="squad-member">
               <span class="avatar avatar-bmo"><img src="assets/players/bmo.png" alt="" /></span>
-              <span><b>BMO</b><small>Player</small></span>
+              <span><b>Bozarul</b><small>Dumb</small></span>
             </div>
             <span class="plus" aria-hidden="true">+</span>
             <div class="squad-member">
               <span class="avatar avatar-jesus"><img src="assets/players/jesus.png" alt="" /></span>
-              <span><b>Jesus did nothing wrong</b><small>Player</small></span>
+              <span><b>Jesus did nothing wrong</b><small>Dumber</small></span>
+            </div>
+            <span class="plus" aria-hidden="true">+</span>
+            <div class="squad-member">
+              <span class="avatar avatar-you"><img src="assets/players/matei.png" alt="" /></span>
+              <span><b>Matei</b><small>Dumbest</small></span>
             </div>
           </div>
         </div>
@@ -98,10 +99,76 @@
 
       <div class="status-banner" id="status-banner" role="status" hidden></div>
 
+      <section class="challenge-section" id="stakes" aria-labelledby="stakes-title" aria-busy="true">
+        <div class="challenge-intro">
+          <p class="eyebrow">The pact / 01</p>
+          <h2 id="stakes-title">Season-end<br /><em>stakes.</em></h2>
+          <p>
+            Our final win rate decides what we have to do. Below 66% means we
+            jump into a canal in winter. Below 50% also means we bike from
+            Amsterdam to Groningen without maps.
+          </p>
+          <div class="challenge-outcome" aria-live="polite">
+            <span id="challenge-mode">Waiting for the live rate</span>
+            <strong id="challenge-outcome">—</strong>
+            <small id="challenge-note">No projection calculated yet.</small>
+          </div>
+        </div>
+
+        <div class="challenge-simulator">
+          <div class="simulator-head">
+            <label for="challenge-rate">Try a final win rate</label>
+            <output id="challenge-rate-output" for="challenge-rate">—</output>
+          </div>
+          <input
+            id="challenge-rate"
+            class="challenge-range"
+            type="range"
+            min="0"
+            max="100"
+            step="0.1"
+            value="0"
+            disabled
+          />
+          <div class="threshold-track" aria-hidden="true">
+            <span class="threshold-zone both-zone">Both</span>
+            <span class="threshold-zone canal-zone">Canal</span>
+            <span class="threshold-zone clear-zone">Clear</span>
+            <i class="rate-marker" id="rate-marker"></i>
+          </div>
+          <div class="threshold-labels" aria-hidden="true">
+            <span>0%</span><span>50%</span><span>66%</span><span>100%</span>
+          </div>
+          <button class="live-rate-button" id="use-live-rate" type="button" disabled>
+            Use live rate
+          </button>
+
+          <div class="challenge-cards">
+            <article class="challenge-card" id="canal-challenge">
+              <span class="challenge-number">01</span>
+              <div>
+                <p>Below 66%</p>
+                <h3>Winter canal jump</h3>
+              </div>
+              <b class="challenge-status">Off</b>
+            </article>
+            <article class="challenge-card" id="bike-challenge">
+              <span class="challenge-number">02</span>
+              <div>
+                <p>Below 50%</p>
+                <h3>Amsterdam → Groningen</h3>
+                <small>No maps.</small>
+              </div>
+              <b class="challenge-status">Off</b>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section class="stats-section" id="stats" aria-labelledby="stats-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Team stats / 01</p>
+            <p class="eyebrow">Team stats / 02</p>
             <h2 id="stats-title">This season.</h2>
           </div>
           <p>All figures cover shared competitive matches in the 2026 season.</p>
@@ -116,7 +183,7 @@
           </article>
           <article class="stat-card">
             <span class="card-index">02</span>
-            <p>Trio K/D</p>
+            <p>Our K/D</p>
             <strong id="team-kd">—</strong>
             <small>combined kills divided by deaths</small>
           </article>
@@ -137,23 +204,49 @@
         <article class="panel carry-panel" id="carry">
           <div class="panel-heading carry-heading">
             <div>
-              <p class="kicker">Leetify rating</p>
-              <h3>Who carries most often?</h3>
+              <p class="kicker" id="carry-kicker">Leetify rating</p>
+              <h3>Who leads us most often?</h3>
             </div>
-            <p>
-              The player with the highest unmodified <code>leetify_rating</code>
-              in each shared match.
-            </p>
+            <div class="carry-controls">
+              <label class="carry-metric-control" for="carry-metric">
+                Rank our games by
+                <select id="carry-metric">
+                  <option value="leetify_rating" selected>Leetify Rating</option>
+                  <option value="score">Score</option>
+                  <option value="total_damage">Total damage</option>
+                </select>
+              </label>
+              <p id="carry-description">
+                We count who had the highest raw Leetify Rating in each match.
+                Values use Leetify's ×100 display scale.
+              </p>
+            </div>
           </div>
           <div class="carry-summary">
             <div class="carry-leader">
-              <span>Most top-rated games</span>
+              <span id="carry-leader-label">Most top-rated games</span>
               <strong id="carry-leader">—</strong>
               <small id="carry-leader-note">Waiting for match ratings</small>
             </div>
             <div class="carry-breakdown" id="carry-breakdown"></div>
           </div>
           <p class="rating-context" id="rating-context">Comparing season averages…</p>
+        </article>
+
+        <article class="panel leaders-panel" id="stat-leaders">
+          <div class="panel-heading leaders-heading">
+            <div>
+              <p class="kicker">Our leaderboard</p>
+              <h3>Six stats. Current leaders.</h3>
+            </div>
+            <p>
+              Each category follows whoever is ahead across our shared 2026
+              matches. Every new game can change the board.
+            </p>
+          </div>
+          <div class="leader-metrics" id="leader-metrics" aria-live="polite">
+            <div class="metric-loading">Comparing all three players…</div>
+          </div>
         </article>
 
         <div class="evidence-grid">
@@ -174,6 +267,7 @@
             <div class="heatmap-summary">
               <span id="busiest-day">Busiest day: —</span>
               <span id="favorite-night">Preferred session: —</span>
+              <span id="average-night" title="Matches no more than six hours apart count as one playing night">Average playing night: —</span>
             </div>
           </article>
 
@@ -204,7 +298,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Result</th><th>Map</th><th>Score</th><th>Date</th><th>Trio kills</th><th>Highest Leetify rating</th></tr></thead>
+              <thead><tr><th>Result</th><th>Map</th><th>Score</th><th>Date</th><th>Our kills</th><th>Highest Leetify rating</th></tr></thead>
               <tbody id="recent-matches">
                 <tr><td colspan="6" class="table-loading">Loading match data…</td></tr>
               </tbody>
@@ -215,15 +309,15 @@
 
       <section class="vote-section" id="vote" aria-labelledby="vote-title">
         <div class="vote-intro">
-          <p class="eyebrow">Map vote / 02</p>
+          <p class="eyebrow">Map vote / 03</p>
           <h2 id="vote-title">What should<br />we play next?</h2>
           <p>
             Choose up to three maps. Your ballot is tied to this browser and
-            resets for everyone after the trio plays another competitive match.
+            resets for everyone after we play another competitive match.
           </p>
           <label class="name-field" for="voter-name">
             Your name
-            <input id="voter-name" type="text" maxlength="24" placeholder="e.g. BMO" autocomplete="nickname" />
+            <input id="voter-name" type="text" maxlength="24" placeholder="e.g. Bozarul" autocomplete="nickname" />
           </label>
           <div class="vote-meta">
             <span><b id="pick-count">0</b>/3 selected</span>
@@ -243,7 +337,7 @@
     <footer>
       <div>
         <a class="wordmark footer-mark" href="#top"><span class="wordmark-mark">3</span><span>THREE STACK</span></a>
-        <p>Three friends. One shared competitive record.</p>
+        <p>Our games. Our shared competitive record.</p>
       </div>
       <div class="attribution">
         <a href="https://leetify.com/" target="_blank" rel="noreferrer">Data Provided by <b>Leetify</b> ↗</a>

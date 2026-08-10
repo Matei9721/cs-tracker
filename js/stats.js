@@ -69,6 +69,120 @@ export function bestRatedPlayerForMatch(match) {
     : { bestPlayerIndex, bestRating };
 }
 
+export function formatLeetifyRating(rating) {
+  if (rating === null || rating === undefined || rating === "") return "—";
+  const rawRating = Number(rating);
+  if (!Number.isFinite(rawRating)) return "—";
+  const displayedRating = rawRating * 100;
+  return `${displayedRating >= 0 ? "+" : ""}${displayedRating.toFixed(2)}`;
+}
+
+function percentage(numerator, denominator) {
+  return denominator > 0 ? (numerator / denominator) * 100 : null;
+}
+
+export function summarizeMatchMetricLeaders(matches, metric, playerCount = 3) {
+  const counts = Array(playerCount).fill(0);
+  const totals = Array(playerCount).fill(0);
+  const games = Array(playerCount).fill(0);
+  let gamesWithLeader = 0;
+
+  for (const match of matches) {
+    const values = Array(playerCount).fill(null);
+
+    for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) {
+      const rawValue = match.playerStats?.[playerIndex]?.[metric];
+      if (rawValue === null || rawValue === undefined || rawValue === "") continue;
+      const value = Number(rawValue);
+      if (!Number.isFinite(value)) continue;
+
+      totals[playerIndex] += value;
+      games[playerIndex] += 1;
+      values[playerIndex] = value;
+    }
+
+    const validValues = values.filter(Number.isFinite);
+    if (!validValues.length) continue;
+    const leaderValue = Math.max(...validValues);
+    values.forEach((value, playerIndex) => {
+      if (value === leaderValue) counts[playerIndex] += 1;
+    });
+    gamesWithLeader += 1;
+  }
+
+  const leaderIndex = gamesWithLeader ? counts.indexOf(Math.max(...counts)) : null;
+  return {
+    counts,
+    gamesWithLeader,
+    leaderIndex,
+    playerSummaries: counts.map((topGames, playerIndex) => ({
+      topGames,
+      games: games[playerIndex],
+      total: games[playerIndex] ? totals[playerIndex] : null,
+      average: games[playerIndex] ? totals[playerIndex] / games[playerIndex] : null,
+    })),
+  };
+}
+
+export function aggregatePlayerPerformance(matches, playerCount = 3) {
+  return Array.from({ length: playerCount }, (_, playerIndex) => {
+    const totals = matches.reduce(
+      (sum, match) => {
+        const stats = match.playerStats?.[playerIndex];
+        if (!stats) return sum;
+        sum.kills += Number(stats.total_kills) || 0;
+        sum.headshotKills += Number(stats.total_hs_kills) || 0;
+        sum.shotsFired += Number(stats.shots_fired) || 0;
+        sum.shotsHitFoe += Number(stats.shots_hit_foe) || 0;
+        sum.totalDamage += Number(stats.total_damage) || 0;
+        sum.rounds += Number(stats.rounds_count) || 0;
+        sum.roundsSurvived += Number(stats.rounds_survived) || 0;
+        sum.counterStrafingShots += Number(stats.counter_strafing_shots_all) || 0;
+        sum.goodCounterStrafingShots += Number(stats.counter_strafing_shots_good) || 0;
+        sum.tradeOpportunities += Number(stats.trade_kill_opportunities) || 0;
+        sum.tradeAttempts += Number(stats.trade_kill_attempts) || 0;
+        return sum;
+      },
+      {
+        kills: 0,
+        headshotKills: 0,
+        shotsFired: 0,
+        shotsHitFoe: 0,
+        totalDamage: 0,
+        rounds: 0,
+        roundsSurvived: 0,
+        counterStrafingShots: 0,
+        goodCounterStrafingShots: 0,
+        tradeOpportunities: 0,
+        tradeAttempts: 0,
+      },
+    );
+
+    return {
+      accuracyPercentage: percentage(totals.shotsHitFoe, totals.shotsFired),
+      averageDamagePerRound:
+        totals.rounds > 0 ? totals.totalDamage / totals.rounds : null,
+      headshotKillPercentage: percentage(totals.headshotKills, totals.kills),
+      survivalPercentage: percentage(totals.roundsSurvived, totals.rounds),
+      goodCounterStrafePercentage: percentage(
+        totals.goodCounterStrafingShots,
+        totals.counterStrafingShots,
+      ),
+      tradeAttemptPercentage: percentage(totals.tradeAttempts, totals.tradeOpportunities),
+    };
+  });
+}
+
+export function challengeForWinRate(winRate) {
+  const rate = Number(winRate);
+  if (!Number.isFinite(rate)) {
+    return { level: "unknown", canal: false, bike: false };
+  }
+  if (rate < 50) return { level: "both", canal: true, bike: true };
+  if (rate < 66) return { level: "canal", canal: true, bike: false };
+  return { level: "clear", canal: false, bike: false };
+}
+
 export function aggregateMatches(matches) {
   const results = matches.map((match) => ({
     match,
@@ -113,14 +227,15 @@ export function aggregateMatches(matches) {
     }
   }
 
-  const carryCounts = Array(Math.max(3, matches[0]?.playerStats?.length ?? 0)).fill(0);
-  let ratedMatches = 0;
-  for (const result of results) {
-    if (result.bestPlayerIndex !== null) {
-      carryCounts[result.bestPlayerIndex] += 1;
-      ratedMatches += 1;
-    }
-  }
+  const playerCount = Math.max(3, matches[0]?.playerStats?.length ?? 0);
+  const metricLeaderboards = Object.fromEntries(
+    ["leetify_rating", "score", "total_damage"].map((metric) => [
+      metric,
+      summarizeMatchMetricLeaders(matches, metric, playerCount),
+    ]),
+  );
+  const carryCounts = [...metricLeaderboards.leetify_rating.counts];
+  const ratedMatches = metricLeaderboards.leetify_rating.gamesWithLeader;
   const usualCarryIndex = ratedMatches
     ? carryCounts.indexOf(Math.max(...carryCounts))
     : null;
@@ -154,6 +269,7 @@ export function aggregateMatches(matches) {
         null,
       )
     : null;
+  const playerPerformance = aggregatePlayerPerformance(matches, carryCounts.length);
 
   return {
     total: matches.length,
@@ -173,6 +289,8 @@ export function aggregateMatches(matches) {
     usualCarryIndex,
     ratingSummaries,
     highestAverageIndex,
+    metricLeaderboards,
+    playerPerformance,
     results,
   };
 }
@@ -198,4 +316,20 @@ export function activityByDay(matches) {
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return counts;
+}
+
+export function averageGamesPerNight(matches, maxGapHours = 6) {
+  if (!matches.length) return 0;
+  const timestamps = matches
+    .map((match) => new Date(match.finished_at).getTime())
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
+  if (!timestamps.length) return 0;
+
+  const maxGapMs = maxGapHours * 60 * 60 * 1000;
+  let sessions = 1;
+  for (let index = 1; index < timestamps.length; index += 1) {
+    if (timestamps[index] - timestamps[index - 1] > maxGapMs) sessions += 1;
+  }
+  return timestamps.length / sessions;
 }

@@ -4,15 +4,18 @@ import {
   MAX_MAP_PICKS,
   PLAYERS,
   SEASON_START,
-} from "./config.js";
+} from "./config.js?v=20260810-carry-metrics";
 import {
   activityByDay,
   aggregateMatches,
+  averageGamesPerNight,
   buildSharedMatches,
+  challengeForWinRate,
   dateKey,
+  formatLeetifyRating,
   formatMapName,
-} from "./stats.js";
-import { getVotes, replaceBallot } from "./supabase.js";
+} from "./stats.js?v=20260810-carry-metrics";
+import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
 const state = {
@@ -22,6 +25,53 @@ const state = {
   votes: [],
   selectedMaps: new Set(),
   voterId: getOrCreateVoterId(),
+  liveWinRate: null,
+  carryMetric: "leetify_rating",
+};
+
+const CHALLENGE_LABELS = {
+  clear: {
+    title: "No challenge",
+    note: "66% or higher clears the pact.",
+  },
+  canal: {
+    title: "Winter canal jump",
+    note: "The canal is active. The mapless bike ride stays off.",
+  },
+  both: {
+    title: "Both challenges",
+    note: "Canal jump plus Amsterdam to Groningen by bike, without maps.",
+  },
+};
+
+const CARRY_METRICS = {
+  leetify_rating: {
+    kicker: "Leetify rating",
+    description:
+      "We count who had the highest raw Leetify Rating in each match. Values use Leetify's ×100 display scale; exact ties count for both of us.",
+    leaderLabel: "Most top-rated games",
+    unavailable: "Leetify ratings were not available",
+    contextLabel: "Highest season average",
+    contextValue: "average",
+  },
+  score: {
+    kicker: "Score",
+    description:
+      "We count who had the highest Counter-Strike scoreboard score in each match. Exact ties count for both of us.",
+    leaderLabel: "Most top-score games",
+    unavailable: "Score data was not available",
+    contextLabel: "Highest average score",
+    contextValue: "average",
+  },
+  total_damage: {
+    kicker: "Total damage",
+    description:
+      "We count who dealt the most total damage in each match. Exact ties count for both of us.",
+    leaderLabel: "Most damage-leading games",
+    unavailable: "Damage data was not available",
+    contextLabel: "Highest season damage",
+    contextValue: "total",
+  },
 };
 
 function getOrCreateVoterId() {
@@ -101,7 +151,7 @@ function renderHero(summary) {
 
 function setupRevealAnimations() {
   const targets = document.querySelectorAll(
-    ".stat-card, .carry-panel, .heatmap-panel, .maps-panel, .recent-panel, .vote-intro, .ballot",
+    ".stat-card, .carry-panel, .leaders-panel, .heatmap-panel, .maps-panel, .recent-panel, .challenge-intro, .challenge-simulator, .vote-intro, .ballot",
   );
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   targets.forEach((target) => target.classList.add("reveal-target"));
@@ -138,38 +188,57 @@ function renderSummaryCards(summary) {
   }
 }
 
+function formatCarryMetric(metric, value) {
+  if (!Number.isFinite(value)) return "—";
+  if (metric === "leetify_rating") return formatLeetifyRating(value);
+  if (metric === "score") return value.toFixed(1);
+  return Math.round(value).toLocaleString();
+}
+
 function renderCarrySummary(summary) {
   const container = $("#carry-breakdown");
   container.replaceChildren();
+  const metric = state.carryMetric;
+  const config = CARRY_METRICS[metric];
+  const leaderboard = summary.metricLeaderboards?.[metric];
+  setText("#carry-kicker", config.kicker);
+  setText("#carry-description", config.description);
+  setText("#carry-leader-label", config.leaderLabel);
 
-  if (summary.usualCarryIndex === null) {
-    setText("#carry-leader", "No rating data");
-    setText("#carry-leader-note", "Leetify ratings were not available");
+  if (!leaderboard || leaderboard.leaderIndex === null) {
+    setText("#carry-leader", "No data");
+    setText("#carry-leader-note", config.unavailable);
+    setText("#rating-context", "Waiting for enough data to compare ourselves.");
     return;
   }
 
-  const leader = PLAYERS[summary.usualCarryIndex];
-  const leaderCount = summary.carryCounts[summary.usualCarryIndex];
-  const leaderAverage = summary.ratingSummaries[summary.usualCarryIndex].average;
+  const leader = PLAYERS[leaderboard.leaderIndex];
+  const leaderSummary = leaderboard.playerSummaries[leaderboard.leaderIndex];
   setText("#carry-leader", leader.name);
   setText(
     "#carry-leader-note",
-    `${leaderCount} highest-rated games · ${formatRating(leaderAverage)} average rating`,
+    `${leaderSummary.topGames} top games · ${formatCarryMetric(metric, leaderSummary.average)} average`,
   );
 
-  if (summary.highestAverageIndex !== null) {
-    const averageLeader = PLAYERS[summary.highestAverageIndex];
-    const average = summary.ratingSummaries[summary.highestAverageIndex].average;
-    setText(
-      "#rating-context",
-      `Highest season average: ${averageLeader.name} (${formatRating(average)})`,
-    );
-  }
+  const contextKey = config.contextValue;
+  const contextIndex = leaderboard.playerSummaries.reduce(
+    (bestIndex, playerSummary, index, all) =>
+      Number.isFinite(playerSummary[contextKey]) &&
+      (bestIndex === null || playerSummary[contextKey] > all[bestIndex][contextKey])
+        ? index
+        : bestIndex,
+    null,
+  );
+  const contextSummary = leaderboard.playerSummaries[contextIndex];
+  setText(
+    "#rating-context",
+    `${config.contextLabel}: ${PLAYERS[contextIndex].name} (${formatCarryMetric(metric, contextSummary[contextKey])})`,
+  );
 
-  const maxCount = Math.max(...summary.carryCounts, 1);
+  const maxCount = Math.max(...leaderboard.counts, 1);
   PLAYERS.forEach((player, index) => {
-    const count = summary.carryCounts[index] ?? 0;
-    const average = summary.ratingSummaries[index].average;
+    const playerSummary = leaderboard.playerSummaries[index];
+    const count = playerSummary.topGames;
     const row = document.createElement("div");
     row.className = `carry-row carry-player-${index}`;
 
@@ -178,7 +247,7 @@ function renderCarrySummary(summary) {
     const name = document.createElement("b");
     name.textContent = player.name;
     const value = document.createElement("span");
-    value.textContent = `${count} top · ${formatRating(average)} avg`;
+    value.textContent = `${count} top · ${formatCarryMetric(metric, playerSummary.average)} avg`;
     head.append(name, value);
 
     const track = document.createElement("div");
@@ -192,9 +261,147 @@ function renderCarrySummary(summary) {
   });
 }
 
-function formatRating(rating) {
-  if (!Number.isFinite(rating)) return "—";
-  return `${rating >= 0 ? "+" : ""}${rating.toFixed(4)}`;
+function setupCarryMetricSelector() {
+  $("#carry-metric").addEventListener("change", (event) => {
+    state.carryMetric = event.target.value;
+    if (state.summary) renderCarrySummary(state.summary);
+  });
+}
+
+function formatPercentage(value) {
+  return Number.isFinite(value) ? `${value.toFixed(1)}%` : "—";
+}
+
+function renderStatLeaders(summary) {
+  const container = $("#leader-metrics");
+  container.replaceChildren();
+
+  if (!summary.playerPerformance?.length) {
+    const message = document.createElement("div");
+    message.className = "metric-loading";
+    message.textContent = "No player performance data is available.";
+    container.append(message);
+    return;
+  }
+
+  const metrics = [
+    {
+      key: "accuracyPercentage",
+      label: "Shot accuracy",
+      note: "enemy hits / shots fired",
+      format: formatPercentage,
+    },
+    {
+      key: "averageDamagePerRound",
+      label: "Damage per round",
+      note: "total damage / rounds played",
+      format: (value) => (Number.isFinite(value) ? value.toFixed(1) : "—"),
+    },
+    {
+      key: "headshotKillPercentage",
+      label: "Headshot kill share",
+      note: "headshot kills / total kills",
+      format: formatPercentage,
+    },
+    {
+      key: "survivalPercentage",
+      label: "Rounds survived",
+      note: "rounds survived / rounds played",
+      format: formatPercentage,
+    },
+    {
+      key: "goodCounterStrafePercentage",
+      label: "Good counter-strafing shots",
+      note: "good shots / tracked counter-strafing shots",
+      format: formatPercentage,
+    },
+    {
+      key: "tradeAttemptPercentage",
+      label: "Trade opportunities attempted",
+      note: "attempts / available trade opportunities",
+      format: formatPercentage,
+    },
+  ];
+
+  metrics.forEach((metric, metricIndex) => {
+    const values = summary.playerPerformance.map((player) => player[metric.key]);
+    const finiteValues = values.filter(Number.isFinite);
+    const bestValue = finiteValues.length ? Math.max(...finiteValues) : null;
+    const leaderIndices = values
+      .map((value, index) => ({ value, index }))
+      .filter(({ value }) => Number.isFinite(value) && value === bestValue)
+      .map(({ index }) => index);
+    const leaderIndex = leaderIndices[0] ?? 0;
+    const leaderNames = leaderIndices.map((index) => PLAYERS[index].name).join(" + ");
+    const comparisons = PLAYERS.map((player, index) => ({ player, index }))
+      .map(({ player, index }) => `${player.name}: ${metric.format(values[index])}`)
+      .join(" · ");
+
+    const card = document.createElement("article");
+    card.className = `leader-metric leader-player-${leaderIndex}`;
+    const top = document.createElement("div");
+    top.className = "leader-metric-top";
+    const label = document.createElement("p");
+    label.textContent = metric.label;
+    const badge = document.createElement("span");
+    badge.textContent = String(metricIndex + 1).padStart(2, "0");
+    top.append(label, badge);
+    const value = document.createElement("strong");
+    value.textContent = metric.format(bestValue);
+    const leader = document.createElement("b");
+    leader.className = "leader-name";
+    leader.textContent = leaderNames || "No leader yet";
+    const note = document.createElement("small");
+    note.textContent = metric.note;
+    const compare = document.createElement("span");
+    compare.className = "leader-comparison";
+    compare.textContent = comparisons;
+    card.append(top, value, leader, note, compare);
+    container.append(card);
+  });
+}
+
+function updateChallengeDisplay(rate, isLiveRate = false) {
+  const challenge = challengeForWinRate(rate);
+  const clampedRate = Math.min(Math.max(Number(rate), 0), 100);
+  const copy = CHALLENGE_LABELS[challenge.level];
+  if (!copy) return;
+
+  setText("#challenge-mode", isLiveRate ? "If the season ended today" : "Testing a finish");
+  setText("#challenge-outcome", copy.title);
+  setText("#challenge-note", copy.note);
+  setText("#challenge-rate-output", `${clampedRate.toFixed(1)}%`);
+  $("#rate-marker").style.left = `${clampedRate}%`;
+
+  for (const [selector, active] of [
+    ["#canal-challenge", challenge.canal],
+    ["#bike-challenge", challenge.bike],
+  ]) {
+    const card = $(selector);
+    card.classList.toggle("is-active", active);
+    card.querySelector(".challenge-status").textContent = active ? "On" : "Off";
+  }
+}
+
+function renderChallengeSimulator(winRate) {
+  state.liveWinRate = winRate;
+  const slider = $("#challenge-rate");
+  slider.value = String(winRate);
+  slider.disabled = false;
+  $("#use-live-rate").disabled = false;
+  updateChallengeDisplay(winRate, true);
+  $("#stakes").setAttribute("aria-busy", "false");
+}
+
+function setupChallengeSimulator() {
+  $("#challenge-rate").addEventListener("input", (event) => {
+    updateChallengeDisplay(Number(event.target.value), false);
+  });
+  $("#use-live-rate").addEventListener("click", () => {
+    if (!Number.isFinite(state.liveWinRate)) return;
+    $("#challenge-rate").value = String(state.liveWinRate);
+    updateChallengeDisplay(state.liveWinRate, true);
+  });
 }
 
 function renderHeatmap(matches) {
@@ -259,6 +466,10 @@ function renderHeatmap(matches) {
     "#favorite-night",
     `Preferred session: ${matches.length ? `${String(busiestHour).padStart(2, "0")}:00` : "—"}`,
   );
+  setText(
+    "#average-night",
+    `Average playing night: ${matches.length ? `${averageGamesPerNight(matches).toFixed(1)} games` : "—"}`,
+  );
 }
 
 function renderMapBars(maps) {
@@ -291,7 +502,7 @@ function renderMapBars(maps) {
 function renderRecentMatches(results) {
   const body = $("#recent-matches");
   body.replaceChildren();
-  for (const result of results.slice(0, 7)) {
+  for (const result of results.slice(0, 10)) {
     const row = document.createElement("tr");
     const resultCell = document.createElement("td");
     const tag = document.createElement("span");
@@ -323,7 +534,7 @@ function renderRecentMatches(results) {
       carryName.textContent = PLAYERS[result.bestPlayerIndex].name;
       const rating = document.createElement("span");
       rating.className = "match-rating";
-      rating.textContent = formatRating(result.bestRating);
+      rating.textContent = formatLeetifyRating(result.bestRating);
       carryCell.append(carryName, rating);
     }
     row.append(resultCell, mapCell, scoreCell, dateCell, killsCell, carryCell);
@@ -359,7 +570,7 @@ function renderBallot() {
     const name = document.createElement("b");
     name.textContent = formatMapName(map.name);
     const history = document.createElement("small");
-    history.textContent = `${map.games} trio play${map.games === 1 ? "" : "s"}`;
+    history.textContent = `${map.games} time${map.games === 1 ? "" : "s"} we played it`;
     choice.append(name, history);
 
     const tally = document.createElement("span");
@@ -444,6 +655,8 @@ async function submitBallot() {
 
 async function initialize() {
   setupRevealAnimations();
+  setupCarryMetricSelector();
+  setupChallengeSimulator();
   $("#voter-name").value = localStorage.getItem("three-stack-voter-name") ?? "";
   $("#voter-name").addEventListener("input", updateVoteControls);
   $("#submit-ballot").addEventListener("click", submitBallot);
@@ -467,6 +680,8 @@ async function initialize() {
     renderHero(state.summary);
     renderSummaryCards(state.summary);
     renderCarrySummary(state.summary);
+    renderStatLeaders(state.summary);
+    if (state.matches.length) renderChallengeSimulator(state.summary.winRate);
     renderHeatmap(state.matches);
     renderMapBars(state.summary.maps);
     renderRecentMatches(state.summary.results);
