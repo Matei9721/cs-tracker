@@ -241,9 +241,13 @@ function renderCarrySummary(summary) {
     `${config.contextLabel}: ${PLAYERS[contextIndex].name} (${formatCarryMetric(metric, contextSummary[contextKey])})`,
   );
 
+  const carryRows = PLAYERS.map((player, index) => ({
+    player,
+    index,
+    summary: leaderboard.playerSummaries[index],
+  })).sort((a, b) => b.summary.topGames - a.summary.topGames || a.index - b.index);
   const maxCount = Math.max(...leaderboard.counts, 1);
-  PLAYERS.forEach((player, index) => {
-    const playerSummary = leaderboard.playerSummaries[index];
+  carryRows.forEach(({ player, index, summary: playerSummary }) => {
     const count = playerSummary.topGames;
     const row = document.createElement("div");
     row.className = `carry-row carry-player-${index}`;
@@ -505,7 +509,10 @@ function renderHeatmap(matches) {
 function renderMapBars(maps) {
   const container = $("#map-bars");
   container.replaceChildren();
-  for (const map of maps.slice(0, 7)) {
+  const sortedMaps = [...maps]
+    .sort((a, b) => b.games - a.games || b.winRate - a.winRate || a.name.localeCompare(b.name))
+    .slice(0, 7);
+  for (const map of sortedMaps) {
     const row = document.createElement("div");
     const decisive = map.wins + map.losses;
     row.className = "map-bar";
