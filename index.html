@@ -22,25 +22,25 @@
     />
     <meta
       name="description"
-      content="The shared 2026 CS2 record for Matei, Bozarul, and Jesus did nothing wrong."
+      content="The live CS2 record for Matei, Bozarul, and Jesus did nothing wrong — plus a vote for the next map."
     />
-    <meta property="og:title" content="Romanian CS Forces — CS2 record" />
+    <meta property="og:title" content="Romanian CS Forces — our CS2 record" />
     <meta
       property="og:description"
-      content="Our 2026 competitive results, activity patterns, carry rankings, and next-map vote."
+      content="Three players, one shared record, and a vote for the next map."
     />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Romanian CS Forces — CS2 record" />
+    <meta name="twitter:title" content="Romanian CS Forces — our CS2 record" />
     <meta
       name="twitter:description"
-      content="Our 2026 competitive results, activity patterns, carry rankings, and next-map vote."
+      content="Three players, one shared record, and a vote for the next map."
     />
-    <title>Romanian CS Forces — CS2 record</title>
+    <title>Romanian CS Forces — our CS2 record</title>
     <link rel="preconnect" href="https://api-public.cs-prod.leetify.com" />
     <link rel="preconnect" href="https://chchllvulagliftmngrw.supabase.co" />
-    <link rel="stylesheet" href="styles.css?v=20260810-art-sizing" />
-    <script type="module" src="js/app.js?v=20260810-romanian-forces"></script>
+    <link rel="stylesheet" href="styles.css?v=20260813-copy-pass" />
+    <script type="module" src="js/app.js?v=20260813-copy-pass"></script>
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -52,7 +52,7 @@
       <nav aria-label="Main navigation">
         <a href="#record">Record</a>
         <a href="#stakes">The bet</a>
-        <a href="#stats">Team stats</a>
+        <a href="#stats">Numbers</a>
         <a href="#vote">Next map</a>
       </nav>
       <span class="live-pill"><i aria-hidden="true"></i> Live data</span>
@@ -61,11 +61,11 @@
     <main id="top">
       <section class="hero" id="record" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="eyebrow">2026 season</p>
-          <h1 id="hero-title">Our shared<br /><em>record.</em></h1>
+          <p class="eyebrow">Since 21 January 2026</p>
+          <h1 id="hero-title">Our record<br /><em>so far.</em></h1>
           <p class="intro">
-            Every 2026 competitive match we played together: Matei, Bozarul,
-            and Jesus did nothing wrong.
+            The three of us have been tracking every shared competitive game:
+            Matei, Bozarul, and Jesus did nothing wrong.
           </p>
 
           <div class="squad" aria-label="Tracked players">
@@ -97,9 +97,9 @@
               <circle class="ring-value" id="ring-value" cx="110" cy="110" r="94"></circle>
             </svg>
             <div class="score-content">
-              <span class="score-label">Shared win rate</span>
+              <span class="score-label">Our win rate</span>
               <strong id="win-rate">—</strong>
-              <span class="score-verdict" id="score-verdict">Calling Leetify…</span>
+              <span class="score-verdict" id="score-verdict">Loading live data…</span>
             </div>
           </div>
           <div class="record-strip">
@@ -107,7 +107,7 @@
             <span><b id="losses">—</b> losses</span>
             <span><b id="matches-played">—</b> matches</span>
           </div>
-          <p class="freshness" id="freshness">Fetching all three match histories</p>
+          <p class="freshness" id="freshness">Checking all three match histories</p>
         </div>
       </section>
 
@@ -115,12 +115,12 @@
 
       <section class="challenge-section" id="stakes" aria-labelledby="stakes-title" aria-busy="true">
         <div class="challenge-intro">
-          <p class="eyebrow">The bet / 01</p>
-          <h2 id="stakes-title">Season-end<br /><em>bet.</em></h2>
+          <p class="eyebrow">The bet</p>
+          <h2 id="stakes-title">If it ended<br /><em>today.</em></h2>
           <p>
-            Our final win rate decides what we have to do. Below 66% means we
-            jump into a canal in winter. Below 50% also means we bike from
-            Amsterdam to Groningen without maps.
+            The final number decides the punishment: under 66% means a winter
+            canal jump. Under 50% adds an Amsterdam-to-Groningen bike ride,
+            without maps.
           </p>
           <div class="challenge-outcome" aria-live="polite">
             <span id="challenge-mode">Waiting for the live rate</span>
@@ -131,7 +131,7 @@
 
         <div class="challenge-simulator">
           <div class="simulator-head">
-            <label for="challenge-rate">Try a final win rate</label>
+            <label for="challenge-rate">Test a final win rate</label>
             <output id="challenge-rate-output" for="challenge-rate">—</output>
           </div>
           <input
@@ -154,7 +154,7 @@
             <span>0%</span><span>50%</span><span>66%</span><span>100%</span>
           </div>
           <button class="live-rate-button" id="use-live-rate" type="button" disabled>
-            Use live rate
+            Back to live rate
           </button>
 
           <div class="challenge-visuals" id="challenge-visuals" data-state="loading">
@@ -169,7 +169,7 @@
                 alt="Stick figure jumping into a canal beneath a crosshair"
                 loading="lazy"
               />
-              <figcaption><span>01 / Canal</span><b>Winter jump active</b></figcaption>
+              <figcaption><span>Canal jump</span><b>Active</b></figcaption>
             </figure>
             <figure class="challenge-visual" id="bike-visual" hidden>
               <img
@@ -177,7 +177,7 @@
                 alt="Stick figure cycling down a long road without navigation"
                 loading="lazy"
               />
-              <figcaption><span>02 / Bike</span><b>Mapless ride active</b></figcaption>
+              <figcaption><span>Bike ride</span><b>Active</b></figcaption>
             </figure>
           </div>
 
@@ -185,17 +185,17 @@
             <article class="challenge-card" id="canal-challenge">
               <span class="challenge-number">01</span>
               <div>
-                <p>Below 66%</p>
-                <h3>Winter canal jump</h3>
+                <p>Under 66%</p>
+                <h3>Jump into a winter canal</h3>
               </div>
               <b class="challenge-status">Off</b>
             </article>
             <article class="challenge-card" id="bike-challenge">
               <span class="challenge-number">02</span>
               <div>
-                <p>Below 50%</p>
-                <h3>Amsterdam → Groningen</h3>
-                <small>No maps.</small>
+                <p>Under 50%</p>
+                <h3>Amsterdam → Groningen by bike</h3>
+                <small>No maps</small>
               </div>
               <b class="challenge-status">Off</b>
             </article>
@@ -206,34 +206,34 @@
       <section class="stats-section" id="stats" aria-labelledby="stats-title">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Team stats / 02</p>
-            <h2 id="stats-title">This season.</h2>
+            <p class="eyebrow">Shared stats</p>
+            <h2 id="stats-title">Where we stand.</h2>
           </div>
-          <p>All figures cover shared competitive matches in the 2026 season.</p>
+          <p>Shared competitive matches since 21 January 2026.</p>
         </div>
 
         <div class="stat-grid">
           <article class="stat-card acid-card">
             <span class="card-index">01</span>
-            <p>Competitive matches</p>
+            <p>Matches together</p>
             <strong id="total-games">—</strong>
-            <small>played together this season</small>
+            <small>all three accounts</small>
           </article>
           <article class="stat-card">
             <span class="card-index">02</span>
-            <p>Our K/D</p>
+            <p>Team K/D</p>
             <strong id="team-kd">—</strong>
-            <small>combined kills divided by deaths</small>
+            <small>combined kills / deaths</small>
           </article>
           <article class="stat-card">
             <span class="card-index">03</span>
-            <p>Most played map</p>
+            <p>Favorite map</p>
             <strong class="map-stat" id="favorite-map">—</strong>
-            <small id="favorite-map-note">most played map</small>
+            <small id="favorite-map-note">most played</small>
           </article>
           <article class="stat-card">
             <span class="card-index">04</span>
-            <p>Longest win streak</p>
+            <p>Best streak</p>
             <strong id="win-streak">—</strong>
             <small>wins in a row</small>
           </article>
@@ -247,7 +247,7 @@
             </div>
             <div class="carry-controls">
               <label class="carry-metric-control" for="carry-metric">
-                <span>Rank our games by</span>
+                <span>Compare by</span>
                 <select id="carry-metric">
                   <option value="leetify_rating" selected>Leetify Rating</option>
                   <option value="score">Score</option>
@@ -255,8 +255,8 @@
                 </select>
               </label>
               <p id="carry-description">
-                We count who had the highest raw Leetify Rating in each match.
-                Values use Leetify's ×100 display scale.
+                One point for the highest raw Leetify Rating in each match.
+                Ties count twice. Display values use Leetify's ×100 scale.
               </p>
             </div>
           </div>
@@ -274,13 +274,10 @@
         <article class="panel leaders-panel" id="stat-leaders">
           <div class="panel-heading leaders-heading">
             <div>
-              <p class="kicker">Our leaderboard</p>
-              <h3>Six stats. Current leaders.</h3>
+              <p class="kicker">Player stats</p>
+              <h3>Who tops each stat?</h3>
             </div>
-            <p>
-              Each category follows whoever is ahead across our shared 2026
-              matches. Every new game can change the board.
-            </p>
+            <p>Who is ahead depends on the stat. Here are all three side by side.</p>
           </div>
           <div class="leader-metrics" id="leader-metrics" aria-live="polite">
             <div class="metric-loading">Comparing all three players…</div>
@@ -291,8 +288,8 @@
           <article class="panel heatmap-panel">
             <div class="panel-heading">
               <div>
-                <p class="kicker">2026 season</p>
-                <h3>Games by day</h3>
+                <p class="kicker">Sessions</p>
+                <h3>When we play</h3>
               </div>
               <div class="heat-legend" aria-label="Heatmap intensity: less to more">
                 <span>Less</span><i></i><i></i><i></i><i></i><span>More</span>
@@ -303,19 +300,19 @@
               <div class="heatmap" id="heatmap" aria-label="Matches played by day"></div>
             </div>
             <div class="heatmap-summary">
-              <span id="busiest-day">Busiest day: —</span>
-              <span id="favorite-night">Preferred session: —</span>
-              <span id="average-night" title="Matches no more than six hours apart count as one playing night">Average playing night: —</span>
+              <span id="busiest-day">Most games: —</span>
+              <span id="favorite-night">Usually start: —</span>
+              <span id="average-night" title="Matches no more than six hours apart count as one playing night">Average session: —</span>
             </div>
           </article>
 
           <article class="panel maps-panel">
             <div class="panel-heading">
               <div>
-                <p class="kicker">Map results</p>
-                <h3>Performance by map</h3>
+                <p class="kicker">Map record</p>
+                <h3>Map by map.</h3>
               </div>
-              <span class="tiny-label">Win rate / plays</span>
+              <span class="tiny-label">Win rate / games</span>
             </div>
             <div class="map-bars" id="map-bars"></div>
           </article>
@@ -324,19 +321,19 @@
         <article class="panel recent-panel">
           <div class="panel-heading">
             <div>
-              <p class="kicker">Most recent</p>
-              <h3>Recent shared matches</h3>
+              <p class="kicker">Latest games</p>
+              <h3>Games we played together</h3>
             </div>
             <a
               class="text-link"
               href="https://leetify.com/app/profile/76561198038593465"
               target="_blank"
               rel="noreferrer"
-            >View on Leetify ↗</a>
+            >Open profile on Leetify ↗</a>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Result</th><th>Map</th><th>Score</th><th>Date</th><th>Our kills</th><th>Highest Leetify rating</th></tr></thead>
+              <thead><tr><th>Result</th><th>Map</th><th>Score</th><th>Date</th><th>Trio kills</th><th>Highest Leetify rating</th></tr></thead>
               <tbody id="recent-matches">
                 <tr><td colspan="6" class="table-loading">Loading match data…</td></tr>
               </tbody>
@@ -347,27 +344,27 @@
 
       <section class="vote-section" id="vote" aria-labelledby="vote-title">
         <div class="vote-intro">
-          <p class="eyebrow">Map vote / 03</p>
-          <h2 id="vote-title">What should<br />we play next?</h2>
+          <p class="eyebrow">Next map</p>
+          <h2 id="vote-title">Pick the<br />next map.</h2>
           <p>
-            Choose up to three maps. Your ballot is tied to this browser and
-            resets for everyone after we play another competitive match.
+            Pick up to three. Your name stays in this browser, and the ballot
+            resets after our next competitive match.
           </p>
           <label class="name-field" for="voter-name">
-            Your name
+            Callsign
             <input id="voter-name" type="text" maxlength="24" placeholder="e.g. Bozarul" autocomplete="nickname" />
           </label>
           <div class="vote-meta">
-            <span><b id="pick-count">0</b>/3 selected</span>
+            <span><b id="pick-count">0</b>/3 picked</span>
             <span id="vote-cycle">Waiting for latest match…</span>
           </div>
           <button class="submit-ballot" id="submit-ballot" type="button" disabled>
-            Lock in ballot <span aria-hidden="true">→</span>
+            Submit picks <span aria-hidden="true">→</span>
           </button>
           <p class="vote-status" id="vote-status" role="status"></p>
         </div>
         <div class="ballot" id="ballot" aria-busy="true">
-          <div class="ballot-loading">The map veto is loading…</div>
+          <div class="ballot-loading">Loading the map pool…</div>
         </div>
       </section>
     </main>
@@ -378,7 +375,7 @@
           <img class="wordmark-logo" src="assets/brand/romanian-cs-forces-mark.png" alt="" />
           <span>ROMANIAN CS FORCES</span>
         </a>
-        <p>Our games. Our shared competitive record.</p>
+        <p>A small independent project for our stack.</p>
       </div>
       <div class="attribution">
         <a href="https://leetify.com/" target="_blank" rel="noreferrer">Data Provided by <b>Leetify</b> ↗</a>

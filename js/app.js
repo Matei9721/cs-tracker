@@ -33,14 +33,14 @@ const state = {
 const CHALLENGE_LABELS = {
   clear: {
     title: "Bet cleared",
-    note: "66% or higher means no punishment.",
+    note: "66% or higher: nothing to do but keep playing.",
   },
   canal: {
-    title: "Winter canal jump",
-    note: "The canal is active. The mapless bike ride stays off.",
+    title: "Canal jump",
+    note: "The canal is on. The mapless bike ride stays off.",
   },
   both: {
-    title: "Both punishments",
+    title: "Both are on",
     note: "Canal jump plus Amsterdam to Groningen by bike, without maps.",
   },
 };
@@ -49,7 +49,7 @@ const CARRY_METRICS = {
   leetify_rating: {
     kicker: "Leetify rating",
     description:
-      "We count who had the highest raw Leetify Rating in each match. Values use Leetify's ×100 display scale; exact ties count for both of us.",
+      "One point for the highest raw Leetify Rating in each match. Ties count twice. Display values use Leetify's ×100 scale.",
     leaderLabel: "Most top-rated games",
     unavailable: "Leetify ratings were not available",
     contextLabel: "Highest season average",
@@ -58,7 +58,7 @@ const CARRY_METRICS = {
   score: {
     kicker: "Score",
     description:
-      "We count who had the highest Counter-Strike scoreboard score in each match. Exact ties count for both of us.",
+      "One point for the highest Counter-Strike scoreboard score in each match. Ties count twice.",
     leaderLabel: "Most top-score games",
     unavailable: "Score data was not available",
     contextLabel: "Highest average score",
@@ -67,7 +67,7 @@ const CARRY_METRICS = {
   total_damage: {
     kicker: "Total damage",
     description:
-      "We count who dealt the most total damage in each match. Exact ties count for both of us.",
+      "One point for the most total damage in each match. Ties count twice.",
     leaderLabel: "Most damage-leading games",
     unavailable: "Damage data was not available",
     contextLabel: "Highest season damage",
@@ -113,9 +113,9 @@ async function fetchMatchHistory(player) {
 
 function scoreVerdict(rate, games) {
   if (!games) return "No results yet";
-  if (rate > 50) return "Winning record";
-  if (rate === 50) return "Even record";
-  return "Losing record";
+  if (rate > 50) return "Winning so far";
+  if (rate === 50) return "Dead even";
+  return "Losing so far";
 }
 
 function animateWinRate(targetRate) {
@@ -491,14 +491,14 @@ function renderHeatmap(matches) {
   }
   const busiestWeekday = weekdayCounts.indexOf(Math.max(...weekdayCounts));
   const busiestHour = hourCounts.indexOf(Math.max(...hourCounts));
-  setText("#busiest-day", `Busiest day: ${matches.length ? weekdays[busiestWeekday] : "—"}`);
+  setText("#busiest-day", `Most games: ${matches.length ? weekdays[busiestWeekday] : "—"}`);
   setText(
     "#favorite-night",
-    `Preferred session: ${matches.length ? `${String(busiestHour).padStart(2, "0")}:00` : "—"}`,
+    `Usually start: ${matches.length ? `${String(busiestHour).padStart(2, "0")}:00` : "—"}`,
   );
   setText(
     "#average-night",
-    `Average playing night: ${matches.length ? `${averageGamesPerNight(matches).toFixed(1)} games` : "—"}`,
+    `Average session: ${matches.length ? `${averageGamesPerNight(matches).toFixed(1)} games` : "—"}`,
   );
 }
 
@@ -622,7 +622,7 @@ function toggleMap(mapName) {
   } else if (state.selectedMaps.size < MAX_MAP_PICKS) {
     state.selectedMaps.add(mapName);
   } else {
-    setText("#vote-status", "Three picks maximum. Deselect one to change your ballot.");
+    setText("#vote-status", "Three picks max. Deselect one to change your picks.");
   }
   renderBallot();
 }
@@ -666,7 +666,7 @@ async function submitBallot() {
   const voterName = $("#voter-name").value.trim();
   if (!voterName || !state.cycleMatchId) return;
   button.disabled = true;
-  setText("#vote-status", "Saving ballot…");
+  setText("#vote-status", "Sending your picks…");
   try {
     await replaceBallot({
       cycleMatchId: state.cycleMatchId,
@@ -675,10 +675,10 @@ async function submitBallot() {
       maps: [...state.selectedMaps],
     });
     localStorage.setItem("three-stack-voter-name", voterName);
-    setText("#vote-status", "Ballot saved.");
+    setText("#vote-status", "Picks saved.");
     await loadVotes();
   } catch (error) {
-    setText("#vote-status", `Could not save: ${error.message}`);
+    setText("#vote-status", `Couldn't save your picks: ${error.message}`);
     button.disabled = false;
   }
 }
@@ -722,7 +722,7 @@ async function initialize() {
         month: "short",
         day: "numeric",
       });
-      setText("#vote-cycle", `Round reset after ${latest}`);
+      setText("#vote-cycle", `Votes reset after ${latest}`);
       await loadVotes();
       window.setInterval(loadVotes, 30_000);
     } else {

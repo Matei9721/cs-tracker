@@ -59,7 +59,7 @@ nav a:hover, nav a:focus-visible { color: var(--acid); }
 
 .hero { min-height: 720px; display: grid; grid-template-columns: 1.05fr .95fr; gap: 6vw; align-items: center; padding: 72px 0 80px; }
 .eyebrow, .kicker, .tiny-label { color: var(--acid); text-transform: uppercase; letter-spacing: .14em; font: 500 11px/1.4 var(--mono); }
-.eyebrow::before { content: "// "; color: var(--muted); }
+.eyebrow::before { content: none; }
 h1, h2, h3, p { margin-top: 0; }
 h1 { margin-bottom: 28px; font-size: clamp(64px, 7.5vw, 122px); line-height: .82; letter-spacing: -.075em; font-weight: 600; }
 h1 em { color: var(--acid); font-style: normal; position: relative; }
@@ -67,7 +67,7 @@ h1 em::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px;
 .intro { max-width: 570px; color: #b9bdb8; font-size: 17px; line-height: 1.65; }
 .squad { display: flex; align-items: center; flex-wrap: wrap; gap: 13px; margin-top: 42px; }
 .squad-member { display: flex; align-items: center; gap: 10px; }
-.squad-member > span:last-child { display: flex; flex-direction: column; gap: 3px; }
+.squad-member > span:last-child { display: flex; flex-direction: column; gap: 0; }
 .squad-member b { font-size: 12px; }
 .squad-member small { color: var(--muted); font: 9px/1.2 var(--mono); text-transform: uppercase; }
 .avatar { --avatar-glow: 215, 255, 57; width: 42px; height: 42px; flex: 0 0 42px; padding: 2px; border: 2px solid var(--acid); border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: var(--panel-2); }
@@ -79,7 +79,7 @@ h1 em::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px;
 
 .score-stage { position: relative; min-height: 550px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(255,255,255,.025), transparent 45%); border: 1px solid var(--line); overflow: hidden; }
 .score-stage::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 46px 46px; opacity: .23; }
-.score-stage::after { content: "SEASON RECORD / LIVE"; position: absolute; right: -68px; top: 50%; color: #3b3f3e; font: 9px/1 var(--mono); letter-spacing: .2em; transform: rotate(90deg); }
+.score-stage::after { content: none; }
 .scan-beam { position: absolute; z-index: 1; left: 0; right: 0; top: -20%; height: 72px; pointer-events: none; opacity: 0; background: linear-gradient(to bottom, transparent, rgba(215,255,57,.06), rgba(215,255,57,.2), transparent); border-bottom: 1px solid rgba(215,255,57,.32); }
 .data-ready .scan-beam { animation: scan-stage 5.4s cubic-bezier(.45, 0, .55, 1) 1.2s infinite; }
 .crosshair { position: absolute; inset: 0; opacity: .35; }
@@ -184,7 +184,7 @@ td { padding: 18px 12px; border-bottom: 1px solid #202425; font: 11px/1 var(--mo
 .table-loading { color: var(--muted); text-align: center; padding: 50px; }
 
 .challenge-section { margin: 0 0 22px; padding: 82px max(32px, 5vw); display: grid; grid-template-columns: .72fr 1.28fr; gap: 7vw; position: relative; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(circle at 85% 15%, rgba(255,92,138,.12), transparent 28rem), var(--panel); }
-.challenge-section::after { content: "THE BET"; position: absolute; left: -18px; bottom: -55px; z-index: 0; color: rgba(242,241,232,.025); font-size: 190px; line-height: 1; font-weight: 700; letter-spacing: -.1em; pointer-events: none; }
+.challenge-section::after { content: none; }
 .challenge-intro, .challenge-simulator { position: relative; z-index: 1; }
 .challenge-intro h2 { margin: 18px 0 28px; }
 .challenge-intro h2 em { color: var(--pink); font-style: normal; }
@@ -239,7 +239,7 @@ td { padding: 18px 12px; border-bottom: 1px solid #202425; font: 11px/1 var(--mo
 .challenge-card.is-active .challenge-status { color: var(--bg); background: var(--pink); border-color: var(--pink); }.challenge-card:nth-child(2).is-active .challenge-status { background: var(--orange); border-color: var(--orange); }
 
 .vote-section { margin-top: 22px; margin-bottom: 100px; padding: 90px max(36px, 6vw); display: grid; grid-template-columns: .75fr 1.25fr; gap: 8vw; background: var(--acid); color: var(--bg); position: relative; overflow: hidden; }
-.vote-section::after { content: "VOTE"; position: absolute; left: -15px; bottom: -55px; color: rgba(9,11,12,.055); font-size: 210px; line-height: 1; font-weight: 700; letter-spacing: -.1em; pointer-events: none; }
+.vote-section::after { content: none; }
 .vote-section .eyebrow { color: var(--bg); opacity: .65; }
 .vote-intro { position: relative; z-index: 1; }
 .vote-intro h2 { font-size: clamp(54px, 6vw, 90px); margin-bottom: 28px; }
