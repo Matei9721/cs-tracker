@@ -117,6 +117,26 @@ test("excludes ties from the win-rate denominator", () => {
   assert.equal(summary.highestAverageIndex, 1);
 });
 
+test("counts Leetify's cs_shelter identifier as Shelter", () => {
+  const match = appearance("shelter", "1", "2026-08-06T20:37:34Z", {
+    map: "cs_shelter",
+  });
+  match.playerStats = [
+    match.stats[0],
+    { total_kills: 10, total_deaths: 10, leetify_rating: 0.02 },
+    { total_kills: 10, total_deaths: 10, leetify_rating: 0.03 },
+  ];
+
+  assert.deepEqual(aggregateMatches([match]).maps[0], {
+    name: "cs_shelter",
+    games: 1,
+    wins: 1,
+    losses: 0,
+    ties: 0,
+    winRate: 100,
+  });
+});
+
 test("identifies the player with the highest unmodified Leetify rating", () => {
   const match = {
     playerStats: [

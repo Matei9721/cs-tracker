@@ -52,7 +52,7 @@ begin
     where selected_map not in (
       'de_cache', 'de_anubis', 'de_inferno', 'de_mirage', 'de_dust2',
       'de_nuke', 'de_ancient', 'de_train', 'de_vertigo', 'de_overpass',
-      'de_boulder', 'de_fachwerk', 'de_shelter', 'cs_office', 'de_italy'
+      'de_boulder', 'de_fachwerk', 'cs_shelter', 'cs_office', 'de_italy'
     )
   ) then
     raise exception 'Map is not available for voting';

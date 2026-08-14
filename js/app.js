@@ -15,7 +15,7 @@ import {
   dateKey,
   formatLeetifyRating,
   formatMapName,
-} from "./stats.js?v=20260810-romanian-forces";
+} from "./stats.js?v=20260815-shelter-id";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -32,7 +32,7 @@ const VOTING_MAPS = [
   "de_overpass",
   "de_boulder",
   "de_fachwerk",
-  "de_shelter",
+  "cs_shelter",
   "cs_office",
   "de_italy",
 ];
