@@ -19,7 +19,7 @@ import {
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
-const VOTING_MAPS = new Set([
+const VOTING_MAPS = [
   "de_cache",
   "de_anubis",
   "de_inferno",
@@ -35,7 +35,8 @@ const VOTING_MAPS = new Set([
   "de_shelter",
   "cs_office",
   "de_italy",
-]);
+];
+const VOTING_MAP_SET = new Set(VOTING_MAPS);
 const state = {
   matches: [],
   summary: null,
@@ -220,6 +221,7 @@ function formatCarryMetric(metric, value) {
 
 function renderCarrySummary(summary) {
   const container = $("#carry-breakdown");
+  const leaderName = $("#carry-leader");
   container.replaceChildren();
   const metric = state.carryMetric;
   const config = CARRY_METRICS[metric];
@@ -230,6 +232,7 @@ function renderCarrySummary(summary) {
 
   if (!leaderboard || leaderboard.leaderIndex === null) {
     setText("#carry-leader", "No data");
+    leaderName.className = "";
     setText("#carry-leader-note", config.unavailable);
     setText("#rating-context", "Waiting for enough data to compare ourselves.");
     return;
@@ -238,6 +241,7 @@ function renderCarrySummary(summary) {
   const leader = PLAYERS[leaderboard.leaderIndex];
   const leaderSummary = leaderboard.playerSummaries[leaderboard.leaderIndex];
   setText("#carry-leader", leader.name);
+  leaderName.className = `carry-player-${leaderboard.leaderIndex}`;
   setText(
     "#carry-leader-note",
     `${leaderSummary.topGames} top games · ${formatCarryMetric(metric, leaderSummary.average)} average`,
@@ -610,7 +614,10 @@ function renderBallot() {
   container.replaceChildren();
   container.setAttribute("aria-busy", "false");
 
-  for (const map of state.summary.maps.filter((map) => VOTING_MAPS.has(map.name))) {
+  const historyByMap = new Map(state.summary.maps.map((map) => [map.name, map]));
+
+  for (const mapName of VOTING_MAPS) {
+    const map = historyByMap.get(mapName) ?? { name: mapName, games: 0 };
     const label = document.createElement("label");
     label.className = `map-option${state.selectedMaps.has(map.name) ? " selected" : ""}`;
     const input = document.createElement("input");
@@ -676,7 +683,10 @@ async function loadVotes() {
     state.votes = await getVotes(state.cycleMatchId);
     state.selectedMaps = new Set(
       state.votes
-        .filter((vote) => vote.voter_id === state.voterId)
+        .filter(
+          (vote) =>
+            vote.voter_id === state.voterId && VOTING_MAP_SET.has(vote.map_name),
+        )
         .map((vote) => vote.map_name),
     );
     renderBallot();
