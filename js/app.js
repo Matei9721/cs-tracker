@@ -19,6 +19,23 @@ import {
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
+const VOTING_MAPS = new Set([
+  "de_cache",
+  "de_anubis",
+  "de_inferno",
+  "de_mirage",
+  "de_dust2",
+  "de_nuke",
+  "de_ancient",
+  "de_train",
+  "de_vertigo",
+  "de_overpass",
+  "de_boulder",
+  "de_fachwerk",
+  "de_shelter",
+  "cs_office",
+  "de_italy",
+]);
 const state = {
   matches: [],
   summary: null,
@@ -593,7 +610,7 @@ function renderBallot() {
   container.replaceChildren();
   container.setAttribute("aria-busy", "false");
 
-  for (const map of state.summary.maps) {
+  for (const map of state.summary.maps.filter((map) => VOTING_MAPS.has(map.name))) {
     const label = document.createElement("label");
     label.className = `map-option${state.selectedMaps.has(map.name) ? " selected" : ""}`;
     const input = document.createElement("input");
