@@ -39,8 +39,8 @@
     <title>Romanian CS Forces — our CS2 record</title>
     <link rel="preconnect" href="https://api-public.cs-prod.leetify.com" />
     <link rel="preconnect" href="https://chchllvulagliftmngrw.supabase.co" />
-    <link rel="stylesheet" href="styles.css?v=20260815-player-colors" />
-    <script type="module" src="js/app.js?v=20260828-premier-matches"></script>
+    <link rel="stylesheet" href="styles.css?v=20260829-episodic-goats" />
+    <script type="module" src="js/app.js?v=20260829-episodic-goats"></script>
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -53,6 +53,7 @@
         <a href="#record">Record</a>
         <a href="#stakes">The bet</a>
         <a href="#stats">Numbers</a>
+        <a href="#goats">Episodic goats</a>
         <a href="#vote">Next map</a>
       </nav>
       <span class="live-pill"><i aria-hidden="true"></i> Live data</span>
@@ -340,6 +341,22 @@
             </table>
           </div>
         </article>
+      </section>
+
+      <section class="goats-section" id="goats" aria-labelledby="goats-title" aria-busy="true">
+        <div class="section-heading goats-heading">
+          <div>
+            <p class="eyebrow">Friends of the force</p>
+            <h2 id="goats-title">Episodic<br /><em>Goats.</em></h2>
+          </div>
+          <p>
+            Friends who joined our trio for at least two shared games this season.
+            Win rates exclude ties; ratings use Leetify's ×100 display scale.
+          </p>
+        </div>
+        <div class="goat-grid" id="episodic-goats" aria-live="polite">
+          <div class="goats-status">Checking every shared lineup…</div>
+        </div>
       </section>
 
       <section class="vote-section" id="vote" aria-labelledby="vote-title">

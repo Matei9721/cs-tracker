@@ -1,11 +1,12 @@
 import {
   LEETIFY_MATCHES_URL,
+  LEETIFY_MATCH_URL,
   LEETIFY_PUBLIC_API_KEY,
   MAX_MAP_PICKS,
   PLAYERS,
   SEASON_START,
   TRACKED_MATCH_SOURCES,
-} from "./config.js?v=20260828-premier-matches";
+} from "./config.js?v=20260829-episodic-goats";
 import {
   activityByDay,
   aggregateMatches,
@@ -15,7 +16,8 @@ import {
   dateKey,
   formatLeetifyRating,
   formatMapName,
-} from "./stats.js?v=20260828-premier-matches";
+  summarizeEpisodicGoats,
+} from "./stats.js?v=20260829-episodic-goats";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -129,6 +131,36 @@ async function fetchMatchHistory(player) {
   return response.json();
 }
 
+async function fetchMatchDetails(matchId) {
+  const response = await fetch(`${LEETIFY_MATCH_URL}/${encodeURIComponent(matchId)}`, {
+    headers: {
+      Accept: "application/json",
+      _leetify_key: LEETIFY_PUBLIC_API_KEY,
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`match lineup returned ${response.status}`);
+  }
+  return response.json();
+}
+
+async function mapWithConcurrency(items, mapper, concurrency = 6) {
+  const results = Array(items.length);
+  let nextIndex = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (nextIndex < items.length) {
+        const index = nextIndex;
+        nextIndex += 1;
+        results[index] = await mapper(items[index], index);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+}
+
 function scoreVerdict(rate, games) {
   if (!games) return "No results yet";
   if (rate > 50) return "Winning so far";
@@ -175,7 +207,7 @@ function renderHero(summary) {
 
 function setupRevealAnimations() {
   const targets = document.querySelectorAll(
-    ".stat-card, .carry-panel, .leaders-panel, .heatmap-panel, .maps-panel, .recent-panel, .challenge-intro, .challenge-simulator, .vote-intro, .ballot",
+    ".stat-card, .carry-panel, .leaders-panel, .heatmap-panel, .maps-panel, .recent-panel, .challenge-intro, .challenge-simulator, .goats-section, .vote-intro, .ballot",
   );
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   targets.forEach((target) => target.classList.add("reveal-target"));
@@ -600,6 +632,96 @@ function renderRecentMatches(results) {
   }
 }
 
+function renderEpisodicGoats(goats) {
+  const container = $("#episodic-goats");
+  container.replaceChildren();
+  $("#goats").setAttribute("aria-busy", "false");
+
+  if (!goats.length) {
+    const empty = document.createElement("div");
+    empty.className = "goats-status";
+    empty.textContent = "No friends have joined the trio for at least two shared games yet.";
+    container.append(empty);
+    return;
+  }
+
+  goats.forEach((goat, index) => {
+    const card = document.createElement("article");
+    card.className = "goat-card";
+
+    const cardTop = document.createElement("div");
+    cardTop.className = "goat-card-top";
+    const cameo = document.createElement("span");
+    cameo.textContent = `${goat.games} ${goat.games === 1 ? "cameo" : "cameos"}`;
+    const indexLabel = document.createElement("span");
+    indexLabel.textContent = `GOAT ${String(index + 1).padStart(2, "0")}`;
+    cardTop.append(cameo, indexLabel);
+
+    const name = document.createElement("a");
+    name.className = "goat-name";
+    name.href = `https://leetify.com/app/profile/${encodeURIComponent(goat.steam64Id)}`;
+    name.target = "_blank";
+    name.rel = "noreferrer";
+    name.textContent = goat.name;
+    name.setAttribute("aria-label", `${goat.name} on Leetify (opens in a new tab)`);
+
+    const metrics = document.createElement("dl");
+    metrics.className = "goat-metrics";
+    const metricRows = [
+      ["Games with us", String(goat.games)],
+      ["Win rate", Number.isFinite(goat.winRate) ? `${goat.winRate.toFixed(1)}%` : "—"],
+      ["Avg Leetify", formatLeetifyRating(goat.averageRating)],
+    ];
+    metricRows.forEach(([label, value]) => {
+      const metric = document.createElement("div");
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const description = document.createElement("dd");
+      description.textContent = value;
+      metric.append(term, description);
+      metrics.append(metric);
+    });
+
+    const record = document.createElement("p");
+    record.className = "goat-record";
+    record.textContent = `${goat.wins} W · ${goat.losses} L · ${goat.ties} T · ${goat.ratingGames}/${goat.games} rated`;
+    card.append(cardTop, name, metrics, record);
+    container.append(card);
+  });
+}
+
+function renderEpisodicGoatsError(error) {
+  const container = $("#episodic-goats");
+  container.replaceChildren();
+  const message = document.createElement("div");
+  message.className = "goats-status goats-error";
+  message.textContent = `The full match lineups could not be loaded: ${error.message}. The rest of the live stats are unaffected.`;
+  container.append(message);
+  $("#goats").setAttribute("aria-busy", "false");
+}
+
+async function loadEpisodicGoats(matches) {
+  if (!matches.length) {
+    renderEpisodicGoats([]);
+    return;
+  }
+  try {
+    const detailedMatches = await mapWithConcurrency(
+      matches,
+      (match) => fetchMatchDetails(match.id),
+    );
+    renderEpisodicGoats(
+      summarizeEpisodicGoats(
+        detailedMatches,
+        PLAYERS.map((player) => player.id),
+      ),
+    );
+  } catch (error) {
+    console.error(error);
+    renderEpisodicGoatsError(error);
+  }
+}
+
 function voteCounts() {
   const counts = new Map();
   for (const vote of state.votes) {
@@ -750,6 +872,7 @@ async function initialize() {
     renderMapBars(state.summary.maps);
     renderRecentMatches(state.summary.results);
     document.body.classList.add("data-ready");
+    void loadEpisodicGoats(state.matches);
 
     if (state.matches[0]) {
       const latest = new Date(state.matches[0].finished_at).toLocaleDateString(undefined, {

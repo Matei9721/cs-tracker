@@ -11,6 +11,7 @@ import {
   formatLeetifyRating,
   formatMapName,
   resultForMatch,
+  summarizeEpisodicGoats,
   summarizeMatchMetricLeaders,
 } from "../js/stats.js";
 
@@ -209,6 +210,78 @@ test("formats raw Leetify ratings on the website's times-100 display scale", () 
   assert.equal(formatLeetifyRating(-0.0289), "-2.89");
   assert.equal(formatLeetifyRating(0), "+0.00");
   assert.equal(formatLeetifyRating(null), "—");
+});
+
+test("finds recurring teammates and summarizes their record with the trio", () => {
+  const detailedMatch = (id, finishedAt, scores, friendStats) => ({
+    id,
+    finished_at: finishedAt,
+    team_scores: scores,
+    stats: [
+      { steam64_id: "1", name: "Matei", initial_team_number: 2 },
+      { steam64_id: "2", name: "Bozarul", initial_team_number: 2 },
+      { steam64_id: "3", name: "Jesus", initial_team_number: 2 },
+      ...friendStats,
+      { steam64_id: "enemy", name: "Enemy", initial_team_number: 3, leetify_rating: 0.2 },
+    ],
+  });
+  const matches = [
+    detailedMatch(
+      "win",
+      "2026-08-03T20:00:00Z",
+      [{ team_number: 2, score: 13 }, { team_number: 3, score: 8 }],
+      [
+        { steam64_id: "friend-a", name: "Latest Goat", initial_team_number: 2, leetify_rating: 0.03 },
+        { steam64_id: "one-off", name: "One Off", initial_team_number: 2, leetify_rating: 0.1 },
+      ],
+    ),
+    detailedMatch(
+      "loss",
+      "2026-08-02T20:00:00Z",
+      [{ team_number: 2, score: 7 }, { team_number: 3, score: 13 }],
+      [{ steam64_id: "friend-a", name: "Old Alias", initial_team_number: 2, leetify_rating: -0.01 }],
+    ),
+    detailedMatch(
+      "tie",
+      "2026-08-01T20:00:00Z",
+      [{ team_number: 2, score: 12 }, { team_number: 3, score: 12 }],
+      [{ steam64_id: "friend-a", name: "Old Alias", initial_team_number: 2, leetify_rating: null }],
+    ),
+  ];
+
+  const [goat] = summarizeEpisodicGoats(matches, players);
+  assert.equal(goat.steam64Id, "friend-a");
+  assert.equal(goat.name, "Latest Goat");
+  assert.equal(goat.games, 3);
+  assert.equal(goat.wins, 1);
+  assert.equal(goat.losses, 1);
+  assert.equal(goat.ties, 1);
+  assert.equal(goat.decisiveGames, 2);
+  assert.equal(goat.winRate, 50);
+  assert.equal(goat.ratingGames, 2);
+  assert.ok(Math.abs(goat.averageRating - 0.01) < Number.EPSILON);
+  assert.equal(summarizeEpisodicGoats(matches, players).length, 1);
+});
+
+test("requires two games and ignores matches without the primary player's team", () => {
+  const matches = [
+    {
+      finished_at: "2026-08-03T20:00:00Z",
+      team_scores: [{ team_number: 2, score: 13 }, { team_number: 3, score: 8 }],
+      stats: [
+        { steam64_id: "1", initial_team_number: 2 },
+        { steam64_id: "friend", name: "Friend", initial_team_number: 2, leetify_rating: 0 },
+      ],
+    },
+    {
+      finished_at: "2026-08-02T20:00:00Z",
+      team_scores: [{ team_number: 2, score: 13 }, { team_number: 3, score: 8 }],
+      stats: [{ steam64_id: "friend", name: "Friend", initial_team_number: 2, leetify_rating: 0.1 }],
+    },
+  ];
+
+  assert.deepEqual(summarizeEpisodicGoats(matches, players), []);
+  assert.equal(summarizeEpisodicGoats(matches, players, 1)[0].averageRating, 0);
 });
 
 test("aggregates the trio's derived performance metrics", () => {

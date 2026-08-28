@@ -83,6 +83,111 @@ export function formatLeetifyRating(rating) {
   return `${displayedRating >= 0 ? "+" : ""}${displayedRating.toFixed(2)}`;
 }
 
+export function summarizeEpisodicGoats(matches, trackedPlayerIds, minimumGames = 2) {
+  const trackedIds = new Set(trackedPlayerIds.map(String));
+  const primaryPlayerId = String(trackedPlayerIds[0] ?? "");
+  const goatsById = new Map();
+
+  for (const match of matches) {
+    const stats = Array.isArray(match.stats) ? match.stats : [];
+    const primaryStats = stats.find(
+      (playerStats) => String(playerStats.steam64_id) === primaryPlayerId,
+    );
+    if (!primaryStats) continue;
+
+    const ourTeamNumber = primaryStats.initial_team_number;
+    const ourTeam = match.team_scores?.find(
+      (team) => team.team_number === ourTeamNumber,
+    );
+    const theirTeam = match.team_scores?.find(
+      (team) => team.team_number !== ourTeamNumber,
+    );
+    const outcome =
+      !ourTeam || !theirTeam
+        ? "unknown"
+        : ourTeam.score === theirTeam.score
+          ? "tie"
+          : ourTeam.score > theirTeam.score
+            ? "win"
+            : "loss";
+    const finishedAt = new Date(match.finished_at).getTime();
+    const seenInMatch = new Set();
+
+    for (const playerStats of stats) {
+      const steam64Id = String(playerStats.steam64_id ?? "");
+      if (
+        !steam64Id ||
+        trackedIds.has(steam64Id) ||
+        seenInMatch.has(steam64Id) ||
+        playerStats.initial_team_number !== ourTeamNumber
+      ) {
+        continue;
+      }
+      seenInMatch.add(steam64Id);
+
+      const existing = goatsById.get(steam64Id) ?? {
+        steam64Id,
+        name: steam64Id,
+        latestNameAt: Number.NEGATIVE_INFINITY,
+        games: 0,
+        wins: 0,
+        losses: 0,
+        ties: 0,
+        ratingTotal: 0,
+        ratingGames: 0,
+      };
+      const name = String(playerStats.name ?? "").trim();
+      if (name && Number.isFinite(finishedAt) && finishedAt >= existing.latestNameAt) {
+        existing.name = name;
+        existing.latestNameAt = finishedAt;
+      }
+      existing.games += 1;
+      if (outcome === "win") existing.wins += 1;
+      if (outcome === "loss") existing.losses += 1;
+      if (outcome === "tie") existing.ties += 1;
+
+      const rating = Number(playerStats.leetify_rating);
+      if (
+        playerStats.leetify_rating !== null &&
+        playerStats.leetify_rating !== undefined &&
+        playerStats.leetify_rating !== "" &&
+        Number.isFinite(rating)
+      ) {
+        existing.ratingTotal += rating;
+        existing.ratingGames += 1;
+      }
+      goatsById.set(steam64Id, existing);
+    }
+  }
+
+  return [...goatsById.values()]
+    .filter((goat) => goat.games >= minimumGames)
+    .map((goat) => {
+      const decisiveGames = goat.wins + goat.losses;
+      return {
+        steam64Id: goat.steam64Id,
+        name: goat.name,
+        games: goat.games,
+        wins: goat.wins,
+        losses: goat.losses,
+        ties: goat.ties,
+        decisiveGames,
+        winRate: decisiveGames ? (goat.wins / decisiveGames) * 100 : null,
+        ratingGames: goat.ratingGames,
+        averageRating: goat.ratingGames ? goat.ratingTotal / goat.ratingGames : null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        b.games - a.games ||
+        (b.winRate ?? Number.NEGATIVE_INFINITY) -
+          (a.winRate ?? Number.NEGATIVE_INFINITY) ||
+        (b.averageRating ?? Number.NEGATIVE_INFINITY) -
+          (a.averageRating ?? Number.NEGATIVE_INFINITY) ||
+        a.name.localeCompare(b.name),
+    );
+}
+
 function percentage(numerator, denominator) {
   return denominator > 0 ? (numerator / denominator) * 100 : null;
 }
