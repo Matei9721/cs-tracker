@@ -24,7 +24,7 @@ The season-end stakes are part of the product story: below 66% activates a winte
 - Jesus did nothing wrong Steam64 ID: `76561198060030545`.
 - Display names: `Matei`, `Bozarul`, and `Jesus did nothing wrong`. Do not label the primary player as `You` or infer labels from changing Steam aliases.
 - A shared game is a Leetify match whose match ID appears in all three players' histories.
-- Include only `matchmaking_competitive` games finished on or after 21 January 2026 and no later than the visitor's current time.
+- Include only Premier (`matchmaking`) and Competitive (`matchmaking_competitive`) games finished on or after 21 January 2026 and no later than the visitor's current time.
 - Determine the trio's result from the primary player's `initial_team_number` and `team_scores`.
 - Win rate is `wins / (wins + losses)`. Ties are excluded from both numerator and denominator, while they may be shown separately for transparency.
 - Use each player's unmodified `leetify_rating` to identify the highest-rated member of the trio in each game. Multiply ratings by 100 only for display so the values match Leetify's website scale. Show both highest-rating frequency and season-average rating so the carry summary does not overstate a single measure.

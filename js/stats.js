@@ -3,7 +3,13 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
 
   const now = options.now ?? new Date();
   const cutoff = options.cutoff ?? new Date(0);
-  const source = options.source ?? "matchmaking_competitive";
+  const configuredSources =
+    options.sources ??
+    options.source ??
+    ["matchmaking", "matchmaking_competitive"];
+  const sources = new Set(
+    Array.isArray(configuredSources) ? configuredSources : [configuredSources],
+  );
   const historiesById = histories.map(
     (matches) => new Map(matches.map((match) => [match.id, match])),
   );
@@ -12,7 +18,7 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
     .filter((match) => {
       const finishedAt = new Date(match.finished_at);
       return (
-        match.data_source === source &&
+        sources.has(match.data_source) &&
         finishedAt >= cutoff &&
         finishedAt <= now &&
         historiesById.every((history) => history.has(match.id))

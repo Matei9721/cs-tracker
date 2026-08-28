@@ -15,6 +15,6 @@ export const SUPABASE_URL = "https://chchllvulagliftmngrw.supabase.co";
 export const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_bWQ3vJNo4mBUCemzRHrn4g_zabaH7aS";
 
-export const COMPETITIVE_SOURCE = "matchmaking_competitive";
+export const TRACKED_MATCH_SOURCES = ["matchmaking", "matchmaking_competitive"];
 export const SEASON_START = "2026-01-21T00:00:00";
 export const MAX_MAP_PICKS = 3;

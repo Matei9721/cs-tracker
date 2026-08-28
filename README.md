@@ -37,13 +37,13 @@ Then open `http://localhost:8080`.
 npm test
 ```
 
-The tests cover shared-match intersection, the season-start and competitive filters, win-rate handling, Leetify-rating carry calculations, and aggregate statistics.
+The tests cover shared-match intersection, the season-start and Premier/Competitive source filters, win-rate handling, Leetify-rating carry calculations, and aggregate statistics.
 
 ## Data and privacy
 
 - Match history is requested directly from Leetify when the page opens and is not persisted.
 - Votes contain a random browser ID, a nickname chosen by the voter, the selected map, and the current match-cycle ID.
-- A new shared competitive match creates a new cycle automatically, so the previous ballot no longer appears.
+- A new shared Premier or Competitive match creates a new cycle automatically, so the previous ballot no longer appears.
 - Clearing browser storage creates a new anonymous voter identity.
 
 This is an independent community project and is not affiliated with or sponsored by Leetify.

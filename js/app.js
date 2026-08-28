@@ -1,11 +1,11 @@
 import {
-  COMPETITIVE_SOURCE,
   LEETIFY_MATCHES_URL,
   LEETIFY_PUBLIC_API_KEY,
   MAX_MAP_PICKS,
   PLAYERS,
   SEASON_START,
-} from "./config.js?v=20260810-leetify-key";
+  TRACKED_MATCH_SOURCES,
+} from "./config.js?v=20260828-premier-matches";
 import {
   activityByDay,
   aggregateMatches,
@@ -15,7 +15,7 @@ import {
   dateKey,
   formatLeetifyRating,
   formatMapName,
-} from "./stats.js?v=20260815-shelter-id";
+} from "./stats.js?v=20260828-premier-matches";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -730,14 +730,14 @@ async function initialize() {
     state.matches = buildSharedMatches(
       histories,
       PLAYERS.map((player) => player.id),
-      { source: COMPETITIVE_SOURCE, cutoff: new Date(SEASON_START) },
+      { sources: TRACKED_MATCH_SOURCES, cutoff: new Date(SEASON_START) },
     );
     state.summary = aggregateMatches(state.matches);
     state.cycleMatchId = state.matches[0]?.id ?? null;
 
     if (!state.matches.length) {
       showStatus(
-        "No shared competitive matches were found in the 2026 season. Check that all three profiles are registered with Leetify and publicly visible.",
+        "No shared Premier or Competitive matches were found in the 2026 season. Check that all three profiles are registered with Leetify and publicly visible.",
       );
     }
 

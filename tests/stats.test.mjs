@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PLAYERS } from "../js/config.js";
+import { PLAYERS, TRACKED_MATCH_SOURCES } from "../js/config.js";
 import {
   aggregateMatches,
   aggregatePlayerPerformance,
@@ -49,25 +49,38 @@ function appearance(id, playerId, finishedAt, options = {}) {
   };
 }
 
-test("intersects all three histories and applies source and season-start filters", () => {
+test("intersects all three histories and includes Premier and Competitive sources", () => {
   const now = new Date("2026-08-07T12:00:00Z");
   const validDate = "2026-08-01T12:00:00Z";
+  const premierDate = "2026-08-02T12:00:00Z";
   const histories = [
     [
       appearance("shared", "1", validDate),
+      appearance("premier", "1", premierDate, { source: "matchmaking" }),
       appearance("not-shared", "1", validDate),
       appearance("wingman", "1", validDate, { source: "matchmaking_wingman" }),
       appearance("old", "1", "2025-07-01T12:00:00Z"),
     ],
-    [appearance("shared", "2", validDate), appearance("wingman", "2", validDate, { source: "matchmaking_wingman" }), appearance("old", "2", "2025-07-01T12:00:00Z")],
-    [appearance("shared", "3", validDate), appearance("wingman", "3", validDate, { source: "matchmaking_wingman" }), appearance("old", "3", "2025-07-01T12:00:00Z")],
+    [
+      appearance("shared", "2", validDate),
+      appearance("premier", "2", premierDate, { source: "matchmaking" }),
+      appearance("wingman", "2", validDate, { source: "matchmaking_wingman" }),
+      appearance("old", "2", "2025-07-01T12:00:00Z"),
+    ],
+    [
+      appearance("shared", "3", validDate),
+      appearance("premier", "3", premierDate, { source: "matchmaking" }),
+      appearance("wingman", "3", validDate, { source: "matchmaking_wingman" }),
+      appearance("old", "3", "2025-07-01T12:00:00Z"),
+    ],
   ];
 
   const matches = buildSharedMatches(histories, players, {
     now,
     cutoff: new Date("2026-01-21T00:00:00Z"),
+    sources: TRACKED_MATCH_SOURCES,
   });
-  assert.deepEqual(matches.map((match) => match.id), ["shared"]);
+  assert.deepEqual(matches.map((match) => match.id), ["premier", "shared"]);
   assert.equal(matches[0].playerStats.length, 3);
 });
 
