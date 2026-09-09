@@ -1,4 +1,5 @@
 import {
+  EPISODIC_GOAT_IDENTITY_GROUPS,
   LEETIFY_MATCHES_URL,
   LEETIFY_MATCH_URL,
   LEETIFY_PUBLIC_API_KEY,
@@ -6,7 +7,7 @@ import {
   PLAYERS,
   SEASON_START,
   TRACKED_MATCH_SOURCES,
-} from "./config.js?v=20260829-episodic-goats";
+} from "./config.js?v=20260909-goat-identities";
 import {
   activityByDay,
   aggregateMatches,
@@ -17,7 +18,7 @@ import {
   formatLeetifyRating,
   formatMapName,
   summarizeEpisodicGoats,
-} from "./stats.js?v=20260829-episodic-goats";
+} from "./stats.js?v=20260909-goat-identities";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -714,6 +715,8 @@ async function loadEpisodicGoats(matches) {
       summarizeEpisodicGoats(
         detailedMatches,
         PLAYERS.map((player) => player.id),
+        2,
+        EPISODIC_GOAT_IDENTITY_GROUPS,
       ),
     );
   } catch (error) {

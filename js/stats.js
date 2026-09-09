@@ -83,10 +83,21 @@ export function formatLeetifyRating(rating) {
   return `${displayedRating >= 0 ? "+" : ""}${displayedRating.toFixed(2)}`;
 }
 
-export function summarizeEpisodicGoats(matches, trackedPlayerIds, minimumGames = 2) {
+export function summarizeEpisodicGoats(
+  matches,
+  trackedPlayerIds,
+  minimumGames = 2,
+  identityGroups = [],
+) {
   const trackedIds = new Set(trackedPlayerIds.map(String));
   const primaryPlayerId = String(trackedPlayerIds[0] ?? "");
   const goatsById = new Map();
+  const identityKeyById = new Map();
+  for (const group of identityGroups) {
+    const steam64Ids = group.map(String).filter(Boolean);
+    const identityKey = steam64Ids[0];
+    steam64Ids.forEach((steam64Id) => identityKeyById.set(steam64Id, identityKey));
+  }
 
   for (const match of matches) {
     const stats = Array.isArray(match.stats) ? match.stats : [];
@@ -115,17 +126,18 @@ export function summarizeEpisodicGoats(matches, trackedPlayerIds, minimumGames =
 
     for (const playerStats of stats) {
       const steam64Id = String(playerStats.steam64_id ?? "");
+      const identityKey = identityKeyById.get(steam64Id) ?? steam64Id;
       if (
         !steam64Id ||
         trackedIds.has(steam64Id) ||
-        seenInMatch.has(steam64Id) ||
+        seenInMatch.has(identityKey) ||
         playerStats.initial_team_number !== ourTeamNumber
       ) {
         continue;
       }
-      seenInMatch.add(steam64Id);
+      seenInMatch.add(identityKey);
 
-      const existing = goatsById.get(steam64Id) ?? {
+      const existing = goatsById.get(identityKey) ?? {
         steam64Id,
         name: steam64Id,
         latestNameAt: Number.NEGATIVE_INFINITY,
@@ -139,6 +151,7 @@ export function summarizeEpisodicGoats(matches, trackedPlayerIds, minimumGames =
       const name = String(playerStats.name ?? "").trim();
       if (name && Number.isFinite(finishedAt) && finishedAt >= existing.latestNameAt) {
         existing.name = name;
+        existing.steam64Id = steam64Id;
         existing.latestNameAt = finishedAt;
       }
       existing.games += 1;
@@ -156,7 +169,7 @@ export function summarizeEpisodicGoats(matches, trackedPlayerIds, minimumGames =
         existing.ratingTotal += rating;
         existing.ratingGames += 1;
       }
-      goatsById.set(steam64Id, existing);
+      goatsById.set(identityKey, existing);
     }
   }
 

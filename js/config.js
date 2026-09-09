@@ -4,6 +4,11 @@ export const PLAYERS = [
   { id: "76561198060030545", name: "Jesus did nothing wrong" },
 ];
 
+// Accounts in a group count as one person; the latest shared-match alias stays visible.
+export const EPISODIC_GOAT_IDENTITY_GROUPS = [
+  ["76561198064344170", "76561198074546184"],
+];
+
 export const LEETIFY_MATCHES_URL =
   "https://api-public.cs-prod.leetify.com/v3/profile/matches";
 export const LEETIFY_MATCH_URL =

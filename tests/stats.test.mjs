@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PLAYERS, TRACKED_MATCH_SOURCES } from "../js/config.js";
+import {
+  EPISODIC_GOAT_IDENTITY_GROUPS,
+  PLAYERS,
+  TRACKED_MATCH_SOURCES,
+} from "../js/config.js";
 import {
   aggregateMatches,
   aggregatePlayerPerformance,
@@ -282,6 +286,56 @@ test("requires two games and ignores matches without the primary player's team",
 
   assert.deepEqual(summarizeEpisodicGoats(matches, players), []);
   assert.equal(summarizeEpisodicGoats(matches, players, 1)[0].averageRating, 0);
+});
+
+test("merges known alternate account IDs and keeps the latest game name", () => {
+  const matches = [
+    {
+      finished_at: "2026-09-08T20:00:00Z",
+      team_scores: [{ team_number: 2, score: 13 }, { team_number: 3, score: 8 }],
+      stats: [
+        { steam64_id: "1", initial_team_number: 2 },
+        {
+          steam64_id: "76561198074546184",
+          name: "Leon S. Kennedy",
+          initial_team_number: 2,
+          leetify_rating: 0.03,
+        },
+      ],
+    },
+    {
+      finished_at: "2026-08-20T20:00:00Z",
+      team_scores: [{ team_number: 2, score: 7 }, { team_number: 3, score: 13 }],
+      stats: [
+        { steam64_id: "1", initial_team_number: 2 },
+        {
+          steam64_id: "76561198064344170",
+          name: "De_Tandarts_Skins",
+          initial_team_number: 2,
+          leetify_rating: -0.01,
+        },
+      ],
+    },
+  ];
+
+  assert.equal(summarizeEpisodicGoats(matches, players).length, 0);
+  assert.deepEqual(
+    summarizeEpisodicGoats(matches, players, 2, EPISODIC_GOAT_IDENTITY_GROUPS),
+    [
+      {
+        steam64Id: "76561198074546184",
+        name: "Leon S. Kennedy",
+        games: 2,
+        wins: 1,
+        losses: 1,
+        ties: 0,
+        decisiveGames: 2,
+        winRate: 50,
+        ratingGames: 2,
+        averageRating: 0.009999999999999998,
+      },
+    ],
+  );
 });
 
 test("aggregates the trio's derived performance metrics", () => {
