@@ -319,6 +319,19 @@ export function challengeForWinRate(winRate) {
   return { level: "clear", canal: false, bike: false };
 }
 
+export function winsToReachThreshold(wins, losses, threshold) {
+  if (
+    !Number.isInteger(wins) || wins < 0 ||
+    !Number.isInteger(losses) || losses < 0 ||
+    wins + losses === 0 ||
+    !Number.isFinite(threshold) || threshold <= 0 || threshold >= 100
+  ) return null;
+
+  return Math.max(0, Math.ceil(
+    (threshold * (wins + losses) - 100 * wins) / (100 - threshold),
+  ));
+}
+
 export function aggregateMatches(matches) {
   const results = matches.map((match) => ({
     match,

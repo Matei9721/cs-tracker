@@ -18,7 +18,8 @@ import {
   formatLeetifyRating,
   formatMapName,
   summarizeEpisodicGoats,
-} from "./stats.js?v=20260909-goat-identities";
+  winsToReachThreshold,
+} from "./stats.js?v=20260929-bet-target";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -481,6 +482,20 @@ function renderChallengeSimulator(winRate) {
   $("#stakes").setAttribute("aria-busy", "false");
 }
 
+function renderChallengeTarget(summary) {
+  if (!summary.decisiveGames || summary.wins * 100 >= 66 * summary.decisiveGames) return;
+
+  const threshold = summary.wins * 2 < summary.decisiveGames ? 50 : 66;
+  const winsNeeded = winsToReachThreshold(summary.wins, summary.losses, threshold);
+  if (winsNeeded === null) return;
+
+  setText(
+    "#challenge-target-value",
+    `We need ${winsNeeded} ${winsNeeded === 1 ? "win" : "wins"} in a row to reach ${threshold}%.`,
+  );
+  $("#challenge-target").hidden = false;
+}
+
 function setupChallengeSimulator() {
   $("#challenge-rate").addEventListener("input", (event) => {
     updateChallengeDisplay(Number(event.target.value), false);
@@ -870,7 +885,10 @@ async function initialize() {
     renderSummaryCards(state.summary);
     renderCarrySummary(state.summary);
     renderStatLeaders(state.summary);
-    if (state.matches.length) renderChallengeSimulator(state.summary.winRate);
+    if (state.matches.length) {
+      renderChallengeSimulator(state.summary.winRate);
+      renderChallengeTarget(state.summary);
+    }
     renderHeatmap(state.matches);
     renderMapBars(state.summary.maps);
     renderRecentMatches(state.summary.results);

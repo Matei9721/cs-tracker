@@ -17,6 +17,7 @@ import {
   resultForMatch,
   summarizeEpisodicGoats,
   summarizeMatchMetricLeaders,
+  winsToReachThreshold,
 } from "../js/stats.js";
 
 const players = ["1", "2", "3"];
@@ -400,6 +401,15 @@ test("applies the challenge thresholds exactly", () => {
   assert.deepEqual(challengeForWinRate(65.9), { level: "canal", canal: true, bike: false });
   assert.deepEqual(challengeForWinRate(50), { level: "canal", canal: true, bike: false });
   assert.deepEqual(challengeForWinRate(49.9), { level: "both", canal: true, bike: true });
+});
+
+test("counts consecutive wins needed for a bet threshold from decisive games", () => {
+  assert.equal(winsToReachThreshold(10, 7, 66), 4);
+  assert.equal(winsToReachThreshold(32, 18, 66), 3);
+  assert.equal(winsToReachThreshold(33, 17, 66), 0);
+  assert.equal(winsToReachThreshold(4, 6, 50), 2);
+  assert.equal(winsToReachThreshold(0, 1, 50), 1);
+  assert.equal(winsToReachThreshold(0, 0, 66), null);
 });
 
 test("calculates average games per playing session across midnight", () => {
