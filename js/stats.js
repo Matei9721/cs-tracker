@@ -35,29 +35,14 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
     .sort((a, b) => new Date(b.finished_at) - new Date(a.finished_at));
 }
 
-export function excludeMatchesWithPlayers(matches, excludedPlayerIds) {
-  const excludedIds = new Set(excludedPlayerIds.map(String));
-  if (!excludedIds.size) return matches;
-
-  return matches.filter((match) => {
-    const stats = match.stats;
-    // Some Leetify lineups contain fewer than ten players; validate the records
-    // and the trio's presence rather than imposing a fixed lineup size.
-    if (
-      !Array.isArray(stats) ||
-      !stats.length ||
-      new Set(stats.map((player) => String(player?.steam64_id ?? ""))).size !== stats.length ||
-      match.playerStats?.some((trackedPlayer) => !stats.some((player) =>
-        String(player?.steam64_id) === String(trackedPlayer.steam64_id),
-      )) ||
-      stats.some((player) => !player?.steam64_id)
-    ) {
-      throw new Error("A match lineup is unavailable or invalid; excluded players could not be checked");
+export function excludeMatchesWithPlayer(matches, lineups, playerId) {
+  const excludedIds = new Set(lineups.filter((match) => {
+    if (!Array.isArray(match.stats) || !match.stats.length) {
+      throw new Error("Match lineup unavailable");
     }
-    return !stats.some((player) =>
-      excludedIds.has(String(player.steam64_id)),
-    );
-  });
+    return match.stats.some((player) => player.steam64_id === playerId);
+  }).map((match) => match.id));
+  return matches.filter((match) => !excludedIds.has(match.id));
 }
 
 export function resultForMatch(match) {
@@ -357,29 +342,17 @@ export function winsToReachThreshold(wins, losses, threshold) {
   ));
 }
 
-export function summarizeWinRate(matches) {
-  const outcomes = matches.map((match) => resultForMatch(match).outcome);
-  const wins = outcomes.filter((outcome) => outcome === "win").length;
-  const losses = outcomes.filter((outcome) => outcome === "loss").length;
-  const ties = outcomes.filter((outcome) => outcome === "tie").length;
-  const decisiveGames = wins + losses;
-  return {
-    total: matches.length,
-    wins,
-    losses,
-    ties,
-    decisiveGames,
-    winRate: decisiveGames ? (wins / decisiveGames) * 100 : 0,
-  };
-}
-
 export function aggregateMatches(matches) {
   const results = matches.map((match) => ({
     match,
     ...resultForMatch(match),
     ...bestRatedPlayerForMatch(match),
   }));
-  const { wins, losses, ties, decisiveGames, winRate } = summarizeWinRate(matches);
+  const wins = results.filter((result) => result.outcome === "win").length;
+  const losses = results.filter((result) => result.outcome === "loss").length;
+  const ties = results.filter((result) => result.outcome === "tie").length;
+  const decisiveGames = wins + losses;
+  const winRate = decisiveGames ? (wins / decisiveGames) * 100 : 0;
 
   const allStats = matches.flatMap((match) => match.playerStats ?? []);
   const kills = allStats.reduce((sum, stat) => sum + (stat?.total_kills ?? 0), 0);

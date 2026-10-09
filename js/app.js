@@ -7,8 +7,7 @@ import {
   PLAYERS,
   SEASON_START,
   TRACKED_MATCH_SOURCES,
-  EXCLUDED_PLAYERS,
-} from "./config.js?v=20261009-jamesi-exclusion";
+} from "./config.js?v=20260909-goat-identities";
 import {
   activityByDay,
   aggregateMatches,
@@ -16,12 +15,12 @@ import {
   buildSharedMatches,
   challengeForWinRate,
   dateKey,
-  excludeMatchesWithPlayers,
+  excludeMatchesWithPlayer,
   formatLeetifyRating,
   formatMapName,
   summarizeEpisodicGoats,
   winsToReachThreshold,
-} from "./stats.js?v=20261009-jamesi-exclusion";
+} from "./stats.js?v=20261009-player-filter";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -136,42 +135,28 @@ async function fetchMatchHistory(player) {
 }
 
 async function fetchMatchDetails(matchId) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    let response;
-    try {
-      response = await fetch(`${LEETIFY_MATCH_URL}/${encodeURIComponent(matchId)}`, {
-        headers: {
-          Accept: "application/json",
-          _leetify_key: LEETIFY_PUBLIC_API_KEY,
-        },
-      });
-    } catch (error) {
-      if (attempt === 2) throw error;
-    }
-    if (response?.ok) return response.json();
-    if (response && (![429, 500, 502, 503, 504].includes(response.status) || attempt === 2)) {
-      throw new Error(`match lineup returned ${response.status}`);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
+  const response = await fetch(`${LEETIFY_MATCH_URL}/${encodeURIComponent(matchId)}`, {
+    headers: {
+      Accept: "application/json",
+      _leetify_key: LEETIFY_PUBLIC_API_KEY,
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`match lineup returned ${response.status}`);
   }
+  return response.json();
 }
 
 async function mapWithConcurrency(items, mapper, concurrency = 6) {
   const results = Array(items.length);
   let nextIndex = 0;
-  let failed = false;
   const workers = Array.from(
     { length: Math.min(concurrency, items.length) },
     async () => {
-      while (!failed && nextIndex < items.length) {
+      while (nextIndex < items.length) {
         const index = nextIndex;
         nextIndex += 1;
-        try {
-          results[index] = await mapper(items[index], index);
-        } catch (error) {
-          failed = true;
-          throw error;
-        }
+        results[index] = await mapper(items[index], index);
       }
     },
   );
@@ -727,20 +712,24 @@ function renderEpisodicGoatsError(error) {
   container.replaceChildren();
   const message = document.createElement("div");
   message.className = "goats-status goats-error";
-  message.textContent = `Teammate statistics could not be loaded: ${error.message}.`;
+  message.textContent = `The full match lineups could not be loaded: ${error.message}. The rest of the live stats are unaffected.`;
   container.append(message);
   $("#goats").setAttribute("aria-busy", "false");
 }
 
-function renderEpisodicGoatsFromMatches(matches) {
+async function loadEpisodicGoats(matches, lineups) {
   if (!matches.length) {
     renderEpisodicGoats([]);
     return;
   }
   try {
+    const detailedMatches = lineups ?? await mapWithConcurrency(
+      matches,
+      (match) => fetchMatchDetails(match.id),
+    );
     renderEpisodicGoats(
       summarizeEpisodicGoats(
-        matches,
+        detailedMatches,
         PLAYERS.map((player) => player.id),
         2,
         EPISODIC_GOAT_IDENTITY_GROUPS,
@@ -879,30 +868,19 @@ async function initialize() {
 
   try {
     const histories = await Promise.all(PLAYERS.map(fetchMatchHistory));
-    const sharedMatches = buildSharedMatches(
+    state.matches = buildSharedMatches(
       histories,
       PLAYERS.map((player) => player.id),
-      {
-        sources: TRACKED_MATCH_SOURCES,
-        cutoff: new Date(SEASON_START),
-      },
+      { sources: TRACKED_MATCH_SOURCES, cutoff: new Date(SEASON_START) },
     );
-    setText("#freshness", "Checking match lineups for excluded players");
-    const detailedMatches = await mapWithConcurrency(sharedMatches, async (match) => {
-      const details = await fetchMatchDetails(match.id);
-      if (details.id !== match.id) throw new Error("Leetify returned a different match lineup");
-      return { ...match, stats: details.stats };
-    });
-    state.matches = excludeMatchesWithPlayers(
-      detailedMatches,
-      EXCLUDED_PLAYERS.map((player) => player.id),
-    );
+    const detailedMatches = await Promise.all(state.matches.map((match) => fetchMatchDetails(match.id)));
+    state.matches = excludeMatchesWithPlayer(state.matches, detailedMatches, "76561198167601625");
     state.summary = aggregateMatches(state.matches);
     state.cycleMatchId = state.matches[0]?.id ?? null;
 
     if (!state.matches.length) {
       showStatus(
-        "No qualifying shared Premier or Competitive matches remain in the 2026 season after excluding games with Jamesi. Check that all three profiles are registered with Leetify and publicly visible.",
+        "No shared Premier or Competitive matches were found in the 2026 season. Check that all three profiles are registered with Leetify and publicly visible.",
       );
     }
 
@@ -910,7 +888,7 @@ async function initialize() {
     renderSummaryCards(state.summary);
     renderCarrySummary(state.summary);
     renderStatLeaders(state.summary);
-    if (state.summary.decisiveGames) {
+    if (state.matches.length) {
       renderChallengeSimulator(state.summary.winRate);
       renderChallengeTarget(state.summary);
     }
@@ -918,7 +896,8 @@ async function initialize() {
     renderMapBars(state.summary.maps);
     renderRecentMatches(state.summary.results);
     document.body.classList.add("data-ready");
-    renderEpisodicGoatsFromMatches(state.matches);
+    const includedIds = new Set(state.matches.map((match) => match.id));
+    void loadEpisodicGoats(state.matches, detailedMatches.filter((match) => includedIds.has(match.id)));
 
     if (state.matches[0]) {
       const latest = new Date(state.matches[0].finished_at).toLocaleDateString(undefined, {
@@ -934,12 +913,11 @@ async function initialize() {
   } catch (error) {
     console.error(error);
     showStatus(
-      `Live Leetify data could not be loaded or checked: ${error.message}. No cached or demo result is being shown.`,
+      `Live Leetify data could not be loaded: ${error.message}. No cached or demo result is being shown.`,
     );
     setText("#score-verdict", "Live data unavailable");
     setText("#freshness", "No result calculated");
     $("#score-stage").setAttribute("aria-busy", "false");
-    renderEpisodicGoatsError(error);
     showBallotError(error);
   }
 }
