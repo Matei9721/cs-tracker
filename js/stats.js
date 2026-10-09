@@ -1,3 +1,9 @@
+const EXCLUDED_MATCH_IDS = new Set([
+  "b37948b6-6a52-4ceb-a34e-d2fab7bb190b",
+  "d4e2b6b3-40f7-4a00-8c7e-dbf0737d1506",
+  "a9956fd2-2262-486d-9e23-c881a4d5b11e",
+]);
+
 export function buildSharedMatches(histories, playerIds, options = {}) {
   if (histories.length !== playerIds.length || histories.length === 0) return [];
 
@@ -18,6 +24,7 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
     .filter((match) => {
       const finishedAt = new Date(match.finished_at);
       return (
+        !EXCLUDED_MATCH_IDS.has(match.id) &&
         sources.has(match.data_source) &&
         finishedAt >= cutoff &&
         finishedAt <= now &&

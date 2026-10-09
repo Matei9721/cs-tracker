@@ -19,7 +19,7 @@ import {
   formatMapName,
   summarizeEpisodicGoats,
   winsToReachThreshold,
-} from "./stats.js?v=20260929-bet-target";
+} from "./stats.js?v=20261010-match-filter";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
