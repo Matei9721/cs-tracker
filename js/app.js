@@ -15,12 +15,11 @@ import {
   buildSharedMatches,
   challengeForWinRate,
   dateKey,
-  excludeMatchesWithPlayer,
   formatLeetifyRating,
   formatMapName,
   summarizeEpisodicGoats,
   winsToReachThreshold,
-} from "./stats.js?v=20261009-player-filter";
+} from "./stats.js?v=20260929-bet-target";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -717,13 +716,13 @@ function renderEpisodicGoatsError(error) {
   $("#goats").setAttribute("aria-busy", "false");
 }
 
-async function loadEpisodicGoats(matches, lineups) {
+async function loadEpisodicGoats(matches) {
   if (!matches.length) {
     renderEpisodicGoats([]);
     return;
   }
   try {
-    const detailedMatches = lineups ?? await mapWithConcurrency(
+    const detailedMatches = await mapWithConcurrency(
       matches,
       (match) => fetchMatchDetails(match.id),
     );
@@ -873,8 +872,6 @@ async function initialize() {
       PLAYERS.map((player) => player.id),
       { sources: TRACKED_MATCH_SOURCES, cutoff: new Date(SEASON_START) },
     );
-    const detailedMatches = await Promise.all(state.matches.map((match) => fetchMatchDetails(match.id)));
-    state.matches = excludeMatchesWithPlayer(state.matches, detailedMatches, "76561198167601625");
     state.summary = aggregateMatches(state.matches);
     state.cycleMatchId = state.matches[0]?.id ?? null;
 
@@ -896,8 +893,7 @@ async function initialize() {
     renderMapBars(state.summary.maps);
     renderRecentMatches(state.summary.results);
     document.body.classList.add("data-ready");
-    const includedIds = new Set(state.matches.map((match) => match.id));
-    void loadEpisodicGoats(state.matches, detailedMatches.filter((match) => includedIds.has(match.id)));
+    void loadEpisodicGoats(state.matches);
 
     if (state.matches[0]) {
       const latest = new Date(state.matches[0].finished_at).toLocaleDateString(undefined, {

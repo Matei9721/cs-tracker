@@ -35,16 +35,6 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
     .sort((a, b) => new Date(b.finished_at) - new Date(a.finished_at));
 }
 
-export function excludeMatchesWithPlayer(matches, lineups, playerId) {
-  const excludedIds = new Set(lineups.filter((match) => {
-    if (!Array.isArray(match.stats) || !match.stats.length) {
-      throw new Error("Match lineup unavailable");
-    }
-    return match.stats.some((player) => player.steam64_id === playerId);
-  }).map((match) => match.id));
-  return matches.filter((match) => !excludedIds.has(match.id));
-}
-
 export function resultForMatch(match) {
   const primaryStats = match.playerStats?.[0] ?? match.stats?.[0];
   if (!primaryStats) return { outcome: "unknown", ourScore: 0, theirScore: 0 };
