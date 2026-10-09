@@ -7,8 +7,8 @@ import {
   PLAYERS,
   SEASON_START,
   TRACKED_MATCH_SOURCES,
-  WIN_RATE_EXCLUDED_RANGES,
-} from "./config.js?v=20261009-win-rate-exclusion";
+  EXCLUDED_MATCH_RANGES,
+} from "./config.js?v=20261009-all-stats-exclusion";
 import {
   activityByDay,
   aggregateMatches,
@@ -19,9 +19,8 @@ import {
   formatLeetifyRating,
   formatMapName,
   summarizeEpisodicGoats,
-  summarizeWinRate,
   winsToReachThreshold,
-} from "./stats.js?v=20261009-win-rate-exclusion";
+} from "./stats.js?v=20261009-all-stats-exclusion";
 import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
 
 const $ = (selector) => document.querySelector(selector);
@@ -872,10 +871,13 @@ async function initialize() {
     state.matches = buildSharedMatches(
       histories,
       PLAYERS.map((player) => player.id),
-      { sources: TRACKED_MATCH_SOURCES, cutoff: new Date(SEASON_START) },
+      {
+        sources: TRACKED_MATCH_SOURCES,
+        cutoff: new Date(SEASON_START),
+        excludedRanges: EXCLUDED_MATCH_RANGES,
+      },
     );
     state.summary = aggregateMatches(state.matches);
-    const winRateSummary = summarizeWinRate(state.matches, WIN_RATE_EXCLUDED_RANGES);
     state.cycleMatchId = state.matches[0]?.id ?? null;
 
     if (!state.matches.length) {
@@ -884,13 +886,13 @@ async function initialize() {
       );
     }
 
-    renderHero(winRateSummary);
+    renderHero(state.summary);
     renderSummaryCards(state.summary);
     renderCarrySummary(state.summary);
     renderStatLeaders(state.summary);
-    if (winRateSummary.decisiveGames) {
-      renderChallengeSimulator(winRateSummary.winRate);
-      renderChallengeTarget(winRateSummary);
+    if (state.summary.decisiveGames) {
+      renderChallengeSimulator(state.summary.winRate);
+      renderChallengeTarget(state.summary);
     }
     renderHeatmap(state.matches);
     renderMapBars(state.summary.maps);

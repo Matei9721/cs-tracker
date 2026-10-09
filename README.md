@@ -42,7 +42,7 @@ The tests cover shared-match intersection, the season-start and Premier/Competit
 ## Data and privacy
 
 - Match history is requested directly from Leetify when the page opens and is not persisted.
-- The trio's win rate, displayed win/loss record, and bet exclude matches finished on 9 October 2026 in Amsterdam time. This fixed exception is configured in `js/config.js`; shared match history, other statistics, and voting cycles still include those games.
+- Matches finished on 9 October 2026 in Amsterdam time are excluded from the entire dashboard: match history, all statistics, teammate summaries, the bet, and voting cycles. This fixed exception is configured in `js/config.js`; the voting cycle uses the latest remaining qualifying shared match.
 - Votes contain a random browser ID, a nickname chosen by the voter, the selected map, and the current match-cycle ID.
 - A new shared Premier or Competitive match creates a new cycle automatically, so the previous ballot no longer appears.
 - Clearing browser storage creates a new anonymous voter identity.

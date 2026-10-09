@@ -3,6 +3,10 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
 
   const now = options.now ?? new Date();
   const cutoff = options.cutoff ?? new Date(0);
+  const excludedRanges = (options.excludedRanges ?? []).map(({ start, end }) => ({
+    start: new Date(start).getTime(),
+    end: new Date(end).getTime(),
+  }));
   const configuredSources =
     options.sources ??
     options.source ??
@@ -21,6 +25,7 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
         sources.has(match.data_source) &&
         finishedAt >= cutoff &&
         finishedAt <= now &&
+        !excludedRanges.some(({ start, end }) => finishedAt >= start && finishedAt < end) &&
         historiesById.every((history) => history.has(match.id))
       );
     })
@@ -332,22 +337,14 @@ export function winsToReachThreshold(wins, losses, threshold) {
   ));
 }
 
-export function summarizeWinRate(matches, excludedRanges = []) {
-  const ranges = excludedRanges.map(({ start, end }) => ({
-    start: new Date(start).getTime(),
-    end: new Date(end).getTime(),
-  }));
-  const countedMatches = matches.filter((match) => {
-    const finishedAt = new Date(match.finished_at).getTime();
-    return !ranges.some(({ start, end }) => finishedAt >= start && finishedAt < end);
-  });
-  const outcomes = countedMatches.map((match) => resultForMatch(match).outcome);
+export function summarizeWinRate(matches) {
+  const outcomes = matches.map((match) => resultForMatch(match).outcome);
   const wins = outcomes.filter((outcome) => outcome === "win").length;
   const losses = outcomes.filter((outcome) => outcome === "loss").length;
   const ties = outcomes.filter((outcome) => outcome === "tie").length;
   const decisiveGames = wins + losses;
   return {
-    total: countedMatches.length,
+    total: matches.length,
     wins,
     losses,
     ties,

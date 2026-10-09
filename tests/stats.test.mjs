@@ -4,9 +4,10 @@ import {
   EPISODIC_GOAT_IDENTITY_GROUPS,
   PLAYERS,
   TRACKED_MATCH_SOURCES,
-  WIN_RATE_EXCLUDED_RANGES,
+  EXCLUDED_MATCH_RANGES,
 } from "../js/config.js";
 import {
+  activityByDay,
   aggregateMatches,
   aggregatePlayerPerformance,
   averageGamesPerNight,
@@ -18,7 +19,6 @@ import {
   resultForMatch,
   summarizeEpisodicGoats,
   summarizeMatchMetricLeaders,
-  summarizeWinRate,
   winsToReachThreshold,
 } from "../js/stats.js";
 
@@ -138,40 +138,77 @@ test("excludes ties from the win-rate denominator", () => {
   assert.equal(summary.highestAverageIndex, 1);
 });
 
-test("excludes only 9 October 2026 in Amsterdam from the trio's win-rate record", () => {
-  const makeMatch = (id, finishedAt, outcome = "win") => {
+test("excludes the Amsterdam day from the shared matches used by every statistic", () => {
+  const makeMatch = (playerId, id, finishedAt, outcome = "win", excluded = false) => {
     const scores = [{ team_number: 2, score: outcome === "loss" ? 8 : 13 },
       { team_number: 3, score: outcome === "win" ? 8 : 13 }];
-    const match = appearance(id, "1", finishedAt, { scores });
-    match.playerStats = match.stats;
-    return match;
+    return appearance(id, playerId, finishedAt, {
+      scores,
+      map: excluded ? "de_nuke" : "de_mirage",
+      kills: excluded ? 1000 : 10,
+      rating: excluded ? 1 : 0.01,
+    });
   };
-  const matches = [
-    makeMatch("before", "2026-10-08T21:59:59.999Z"),
-    makeMatch("start", "2026-10-08T22:00:00Z", "loss"),
-    makeMatch("midday", "2026-10-09T12:00:00Z"),
-    makeMatch("end", "2026-10-09T21:59:59.999Z", "loss"),
-    makeMatch("after", "2026-10-09T22:00:00Z", "loss"),
-    makeMatch("tie", "2026-10-10T18:00:00Z", "tie"),
-    makeMatch("future-day", "2026-10-11T18:00:00Z"),
-  ];
-  const { winRate, ...record } = summarizeWinRate(matches, WIN_RATE_EXCLUDED_RANGES);
-  assert.deepEqual(record, {
-    total: 4, wins: 2, losses: 1, ties: 1, decisiveGames: 3,
-  });
-  assert.ok(Math.abs(winRate - 200 / 3) < 1e-10);
-  // The exclusion must not remove match history, map stats, or the voting cycle.
-  assert.equal(aggregateMatches(matches).total, 7);
-  assert.equal(aggregateMatches(matches).maps[0].games, 7);
-  assert.equal(summarizeWinRate(matches).decisiveGames, 6);
+  const histories = players.map((playerId) => [
+    makeMatch(playerId, "before", "2026-10-08T21:59:59.999Z"),
+    makeMatch(playerId, "start", "2026-10-08T22:00:00Z", "loss", true),
+    makeMatch(playerId, "midday", "2026-10-09T12:00:00Z", "win", true),
+    makeMatch(playerId, "end", "2026-10-09T21:59:59.999Z", "tie", true),
+    makeMatch(playerId, "after", "2026-10-09T22:00:00Z", "loss"),
+    makeMatch(playerId, "tie", "2026-10-10T18:00:00Z", "tie"),
+    makeMatch(playerId, "next-day", "2026-10-11T18:00:00Z"),
+  ]);
+  const options = { now: new Date("2026-10-12T00:00:00Z"), excludedRanges: EXCLUDED_MATCH_RANGES };
+  const matches = buildSharedMatches(histories, players, options);
+  assert.deepEqual(matches.map(({ id }) => id), ["next-day", "tie", "after", "before"]);
+  const summary = aggregateMatches(matches);
+  assert.equal(summary.total, 4);
+  assert.equal(summary.wins, 2);
+  assert.equal(summary.losses, 1);
+  assert.equal(summary.ties, 1);
+  assert.equal(summary.decisiveGames, 3);
+  assert.ok(Math.abs(summary.winRate - 200 / 3) < 1e-10);
+  assert.equal(summary.kills, 120);
+  assert.equal(summary.ratingSummaries[0].average, 0.01);
+  assert.deepEqual(summary.maps.map(({ name, games }) => ({ name, games })), [
+    { name: "de_mirage", games: 4 },
+  ]);
+  assert.deepEqual(summary.results.map(({ match }) => match.id), matches.map(({ id }) => id));
+  assert.equal([...activityByDay(matches).values()].reduce((sum, count) => sum + count, 0), 4);
+  assert.equal(averageGamesPerNight(matches), 1);
+  const detailedMatches = matches.map((match) => ({
+    ...match,
+    stats: [...match.playerStats, { steam64_id: "4", name: "Friend", initial_team_number: 2, leetify_rating: 0.02 }],
+  }));
+  assert.equal(summarizeEpisodicGoats(detailedMatches, players)[0].games, 4);
+  assert.equal(histories[0].length, 7);
+  assert.equal(buildSharedMatches(histories, players, { now: options.now }).length, 7);
 });
 
-test("keeps an empty win-rate record when every game is excluded", () => {
-  const match = appearance("excluded", "1", "2026-10-09T12:00:00Z");
-  match.playerStats = match.stats;
-  const empty = { total: 0, wins: 0, losses: 0, ties: 0, decisiveGames: 0, winRate: 0 };
-  assert.deepEqual(summarizeWinRate([match], WIN_RATE_EXCLUDED_RANGES), empty);
-  assert.deepEqual(summarizeWinRate([], WIN_RATE_EXCLUDED_RANGES), empty);
+test("uses the last remaining shared match for voting when the latest games are excluded", () => {
+  const histories = players.map((playerId) => [
+    appearance("excluded-latest", playerId, "2026-10-09T12:00:00Z"),
+    appearance("previous-cycle", playerId, "2026-10-08T18:00:00Z"),
+    appearance("future", playerId, "2026-10-10T18:00:00Z"),
+  ]);
+  const matches = buildSharedMatches(histories, players, {
+    now: new Date("2026-10-09T20:00:00Z"), excludedRanges: EXCLUDED_MATCH_RANGES,
+  });
+  assert.deepEqual(matches.map(({ id }) => id), ["previous-cycle"]);
+});
+
+test("keeps an empty dashboard when every shared game is excluded", () => {
+  const histories = players.map((playerId) => [appearance("excluded", playerId, "2026-10-09T12:00:00Z")]);
+  const matches = buildSharedMatches(histories, players, {
+    now: new Date("2026-10-10T00:00:00Z"), excludedRanges: EXCLUDED_MATCH_RANGES,
+  });
+  assert.deepEqual(matches, []);
+  assert.equal(aggregateMatches(matches).total, 0);
+  assert.deepEqual(aggregateMatches(matches).results, []);
+  assert.equal(averageGamesPerNight(matches), 0);
+  assert.equal(activityByDay(matches).size, 0);
+  assert.deepEqual(summarizeEpisodicGoats(matches, players), []);
+  assert.equal(matches[0]?.id ?? null, null);
 });
 
 test("counts Leetify's cs_shelter identifier as Shelter", () => {
