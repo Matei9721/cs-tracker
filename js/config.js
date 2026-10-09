@@ -24,8 +24,6 @@ export const SUPABASE_PUBLISHABLE_KEY =
 
 export const TRACKED_MATCH_SOURCES = ["matchmaking", "matchmaking_competitive"];
 export const SEASON_START = "2026-01-21T00:00:00";
-// Fixed Amsterdam calendar day; excluded from every dashboard feature.
-export const EXCLUDED_MATCH_RANGES = [
-  { start: "2026-10-09T00:00:00+02:00", end: "2026-10-10T00:00:00+02:00" },
-];
+// Exclude games containing these accounts, even after a name change.
+export const EXCLUDED_PLAYERS = [{ id: "76561198167601625", name: "Jamesi" }];
 export const MAX_MAP_PICKS = 3;

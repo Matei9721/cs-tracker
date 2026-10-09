@@ -4,7 +4,7 @@ import {
   EPISODIC_GOAT_IDENTITY_GROUPS,
   PLAYERS,
   TRACKED_MATCH_SOURCES,
-  EXCLUDED_MATCH_RANGES,
+  EXCLUDED_PLAYERS,
 } from "../js/config.js";
 import {
   activityByDay,
@@ -14,6 +14,7 @@ import {
   bestRatedPlayerForMatch,
   buildSharedMatches,
   challengeForWinRate,
+  excludeMatchesWithPlayers,
   formatLeetifyRating,
   formatMapName,
   resultForMatch,
@@ -138,70 +139,88 @@ test("excludes ties from the win-rate denominator", () => {
   assert.equal(summary.highestAverageIndex, 1);
 });
 
-test("excludes the Amsterdam day from the shared matches used by every statistic", () => {
-  const makeMatch = (playerId, id, finishedAt, outcome = "win", excluded = false) => {
-    const scores = [{ team_number: 2, score: outcome === "loss" ? 8 : 13 },
-      { team_number: 3, score: outcome === "win" ? 8 : 13 }];
-    return appearance(id, playerId, finishedAt, {
-      scores,
-      map: excluded ? "de_nuke" : "de_mirage",
-      kills: excluded ? 1000 : 10,
-      rating: excluded ? 1 : 0.01,
-    });
-  };
-  const histories = players.map((playerId) => [
-    makeMatch(playerId, "before", "2026-10-08T21:59:59.999Z"),
-    makeMatch(playerId, "start", "2026-10-08T22:00:00Z", "loss", true),
-    makeMatch(playerId, "midday", "2026-10-09T12:00:00Z", "win", true),
-    makeMatch(playerId, "end", "2026-10-09T21:59:59.999Z", "tie", true),
-    makeMatch(playerId, "after", "2026-10-09T22:00:00Z", "loss"),
-    makeMatch(playerId, "tie", "2026-10-10T18:00:00Z", "tie"),
-    makeMatch(playerId, "next-day", "2026-10-11T18:00:00Z"),
-  ]);
-  const options = { now: new Date("2026-10-12T00:00:00Z"), excludedRanges: EXCLUDED_MATCH_RANGES };
-  const matches = buildSharedMatches(histories, players, options);
-  assert.deepEqual(matches.map(({ id }) => id), ["next-day", "tie", "after", "before"]);
-  const summary = aggregateMatches(matches);
-  assert.equal(summary.total, 4);
+const jamesiId = "76561198167601625";
+const excludedPlayerIds = EXCLUDED_PLAYERS.map(({ id }) => id);
+
+function matchWithLineup(id, finishedAt, options = {}) {
+  const match = appearance(id, "1", finishedAt, options);
+  match.playerStats = players.map((steam64_id) => ({ ...match.stats[0], steam64_id }));
+  const ourTeam = options.team ?? 2;
+  const otherTeam = ourTeam === 2 ? 3 : 2;
+  match.stats = [
+    ...match.playerStats,
+    { steam64_id: "friend", name: "Friend", initial_team_number: ourTeam, leetify_rating: 0.02 },
+    { steam64_id: options.withJamesi ? jamesiId : "fifth", name: options.name ?? "Jamesi", initial_team_number: ourTeam },
+    ...Array.from({ length: 5 }, (_, index) => ({
+      steam64_id: `enemy-${index}`,
+      name: "Opponent", initial_team_number: otherTeam,
+    })),
+  ];
+  return match;
+}
+
+test("identifies excluded players by Steam account, not mutable aliases", () => {
+  assert.deepEqual(EXCLUDED_PLAYERS, [{ id: jamesiId, name: "Jamesi" }]);
+  const matches = [
+    matchWithLineup("old-loss", "2026-02-01T18:00:00Z", {
+      withJamesi: true, scores: [{ team_number: 2, score: 8 }, { team_number: 3, score: 13 }],
+    }),
+    matchWithLineup("renamed", "2026-10-09T18:00:00Z", { withJamesi: true, name: "New alias" }),
+    matchWithLineup("later-tie", "2027-01-01T18:00:00Z", {
+      withJamesi: true, scores: [{ team_number: 2, score: 12 }, { team_number: 3, score: 12 }],
+    }),
+    matchWithLineup("same-name-other-account", "2026-10-09T19:00:00Z"),
+    matchWithLineup("other-initial-team", "2026-10-09T21:00:00Z", { team: 3, withJamesi: true }),
+  ];
+  assert.deepEqual(
+    excludeMatchesWithPlayers(matches, excludedPlayerIds).map(({ id }) => id),
+    ["same-name-other-account"],
+  );
+  assert.equal(matches.length, 5);
+});
+
+test("retains 9 October games without Jamesi and removes his games from all statistics", () => {
+  const histories = players.map((playerId) => [appearance("october9", playerId, "2026-10-09T18:00:00Z")]);
+  assert.equal(buildSharedMatches(histories, players, { now: new Date("2026-10-10T00:00:00Z") }).length, 1);
+  const matches = [
+    matchWithLineup("excluded-latest", "2026-10-09T21:00:00Z", {
+      withJamesi: true, map: "de_nuke", kills: 1000, rating: 1,
+    }),
+    matchWithLineup("october9", "2026-10-09T18:00:00Z"),
+    matchWithLineup("earlier", "2026-09-01T18:00:00Z"),
+    matchWithLineup("excluded-earlier", "2026-08-01T18:00:00Z", { withJamesi: true }),
+  ];
+  const filtered = excludeMatchesWithPlayers(matches, excludedPlayerIds);
+  const summary = aggregateMatches(filtered);
+  assert.equal(summary.total, 2);
   assert.equal(summary.wins, 2);
-  assert.equal(summary.losses, 1);
-  assert.equal(summary.ties, 1);
-  assert.equal(summary.decisiveGames, 3);
-  assert.ok(Math.abs(summary.winRate - 200 / 3) < 1e-10);
-  assert.equal(summary.kills, 120);
+  assert.equal(summary.kills, 60);
   assert.equal(summary.ratingSummaries[0].average, 0.01);
-  assert.deepEqual(summary.maps.map(({ name, games }) => ({ name, games })), [
-    { name: "de_mirage", games: 4 },
-  ]);
-  assert.deepEqual(summary.results.map(({ match }) => match.id), matches.map(({ id }) => id));
-  assert.equal([...activityByDay(matches).values()].reduce((sum, count) => sum + count, 0), 4);
-  assert.equal(averageGamesPerNight(matches), 1);
-  const detailedMatches = matches.map((match) => ({
-    ...match,
-    stats: [...match.playerStats, { steam64_id: "4", name: "Friend", initial_team_number: 2, leetify_rating: 0.02 }],
-  }));
-  assert.equal(summarizeEpisodicGoats(detailedMatches, players)[0].games, 4);
-  assert.equal(histories[0].length, 7);
-  assert.equal(buildSharedMatches(histories, players, { now: options.now }).length, 7);
+  assert.deepEqual(summary.maps.map(({ name, games }) => ({ name, games })), [{ name: "de_mirage", games: 2 }]);
+  assert.deepEqual(summary.results.map(({ match }) => match.id), ["october9", "earlier"]);
+  assert.equal([...activityByDay(filtered).values()].reduce((sum, count) => sum + count, 0), 2);
+  assert.equal(averageGamesPerNight(filtered), 1);
+  const friend = summarizeEpisodicGoats(filtered, players).find(({ steam64Id }) => steam64Id === "friend");
+  assert.equal(friend.games, 2);
+  assert.equal(filtered[0].id, "october9"); // Latest qualifying voting cycle.
 });
 
-test("uses the last remaining shared match for voting when the latest games are excluded", () => {
-  const histories = players.map((playerId) => [
-    appearance("excluded-latest", playerId, "2026-10-09T12:00:00Z"),
-    appearance("previous-cycle", playerId, "2026-10-08T18:00:00Z"),
-    appearance("future", playerId, "2026-10-10T18:00:00Z"),
-  ]);
-  const matches = buildSharedMatches(histories, players, {
-    now: new Date("2026-10-09T20:00:00Z"), excludedRanges: EXCLUDED_MATCH_RANGES,
-  });
-  assert.deepEqual(matches.map(({ id }) => id), ["previous-cycle"]);
+test("accepts shorter Leetify lineups but rejects missing or invalid player records", () => {
+  const complete = matchWithLineup("complete", "2026-10-09T18:00:00Z");
+  assert.equal(excludeMatchesWithPlayers([{ ...complete, stats: complete.stats.slice(0, 9) }], excludedPlayerIds).length, 1);
+  for (const stats of [undefined, {}, [], complete.stats.slice(0, 1), complete.stats.map((stat) => ({ ...stat, steam64_id: "duplicate" })), complete.stats.map((stat) => ({ ...stat, steam64_id: null }))]) {
+    assert.throws(
+      () => excludeMatchesWithPlayers([{ ...complete, stats }], excludedPlayerIds),
+      /match lineup is unavailable or invalid/,
+    );
+  }
 });
 
-test("keeps an empty dashboard when every shared game is excluded", () => {
-  const histories = players.map((playerId) => [appearance("excluded", playerId, "2026-10-09T12:00:00Z")]);
-  const matches = buildSharedMatches(histories, players, {
-    now: new Date("2026-10-10T00:00:00Z"), excludedRanges: EXCLUDED_MATCH_RANGES,
-  });
+test("keeps an empty dashboard when every shared game includes Jamesi", () => {
+  const matches = excludeMatchesWithPlayers(
+    [matchWithLineup("excluded", "2026-10-09T12:00:00Z", { withJamesi: true })],
+    excludedPlayerIds,
+  );
   assert.deepEqual(matches, []);
   assert.equal(aggregateMatches(matches).total, 0);
   assert.deepEqual(aggregateMatches(matches).results, []);
@@ -209,6 +228,7 @@ test("keeps an empty dashboard when every shared game is excluded", () => {
   assert.equal(activityByDay(matches).size, 0);
   assert.deepEqual(summarizeEpisodicGoats(matches, players), []);
   assert.equal(matches[0]?.id ?? null, null);
+  assert.deepEqual(excludeMatchesWithPlayers([], excludedPlayerIds), []);
 });
 
 test("counts Leetify's cs_shelter identifier as Shelter", () => {

@@ -3,10 +3,6 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
 
   const now = options.now ?? new Date();
   const cutoff = options.cutoff ?? new Date(0);
-  const excludedRanges = (options.excludedRanges ?? []).map(({ start, end }) => ({
-    start: new Date(start).getTime(),
-    end: new Date(end).getTime(),
-  }));
   const configuredSources =
     options.sources ??
     options.source ??
@@ -25,7 +21,6 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
         sources.has(match.data_source) &&
         finishedAt >= cutoff &&
         finishedAt <= now &&
-        !excludedRanges.some(({ start, end }) => finishedAt >= start && finishedAt < end) &&
         historiesById.every((history) => history.has(match.id))
       );
     })
@@ -38,6 +33,31 @@ export function buildSharedMatches(histories, playerIds, options = {}) {
     })
     .filter((match) => match.playerStats.every(Boolean))
     .sort((a, b) => new Date(b.finished_at) - new Date(a.finished_at));
+}
+
+export function excludeMatchesWithPlayers(matches, excludedPlayerIds) {
+  const excludedIds = new Set(excludedPlayerIds.map(String));
+  if (!excludedIds.size) return matches;
+
+  return matches.filter((match) => {
+    const stats = match.stats;
+    // Some Leetify lineups contain fewer than ten players; validate the records
+    // and the trio's presence rather than imposing a fixed lineup size.
+    if (
+      !Array.isArray(stats) ||
+      !stats.length ||
+      new Set(stats.map((player) => String(player?.steam64_id ?? ""))).size !== stats.length ||
+      match.playerStats?.some((trackedPlayer) => !stats.some((player) =>
+        String(player?.steam64_id) === String(trackedPlayer.steam64_id),
+      )) ||
+      stats.some((player) => !player?.steam64_id)
+    ) {
+      throw new Error("A match lineup is unavailable or invalid; excluded players could not be checked");
+    }
+    return !stats.some((player) =>
+      excludedIds.has(String(player.steam64_id)),
+    );
+  });
 }
 
 export function resultForMatch(match) {

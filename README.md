@@ -42,7 +42,8 @@ The tests cover shared-match intersection, the season-start and Premier/Competit
 ## Data and privacy
 
 - Match history is requested directly from Leetify when the page opens and is not persisted.
-- Matches finished on 9 October 2026 in Amsterdam time are excluded from the entire dashboard: match history, all statistics, teammate summaries, the bet, and voting cycles. This fixed exception is configured in `js/config.js`; the voting cycle uses the latest remaining qualifying shared match.
+- Games containing Jamesi (Steam64 `76561198167601625`) are excluded from the entire dashboard, including history, statistics, teammate summaries, the bet, and voting cycles. The permanent account-based rule is configured in `js/config.js`; it applies to existing and future games even if he changes his name. There is no date exclusion.
+- Full match lineups are fetched once on each page load and checked before showing statistics; those same lineups supply teammate summaries. If a lineup cannot be loaded or has invalid player records, the page shows an error instead of counting unchecked games. Leetify lineups with fewer than ten recorded players are supported. Nothing is cached or persisted.
 - Votes contain a random browser ID, a nickname chosen by the voter, the selected map, and the current match-cycle ID.
 - A new shared Premier or Competitive match creates a new cycle automatically, so the previous ballot no longer appears.
 - Clearing browser storage creates a new anonymous voter identity.
