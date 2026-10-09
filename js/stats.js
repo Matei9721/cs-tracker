@@ -332,17 +332,37 @@ export function winsToReachThreshold(wins, losses, threshold) {
   ));
 }
 
+export function summarizeWinRate(matches, excludedRanges = []) {
+  const ranges = excludedRanges.map(({ start, end }) => ({
+    start: new Date(start).getTime(),
+    end: new Date(end).getTime(),
+  }));
+  const countedMatches = matches.filter((match) => {
+    const finishedAt = new Date(match.finished_at).getTime();
+    return !ranges.some(({ start, end }) => finishedAt >= start && finishedAt < end);
+  });
+  const outcomes = countedMatches.map((match) => resultForMatch(match).outcome);
+  const wins = outcomes.filter((outcome) => outcome === "win").length;
+  const losses = outcomes.filter((outcome) => outcome === "loss").length;
+  const ties = outcomes.filter((outcome) => outcome === "tie").length;
+  const decisiveGames = wins + losses;
+  return {
+    total: countedMatches.length,
+    wins,
+    losses,
+    ties,
+    decisiveGames,
+    winRate: decisiveGames ? (wins / decisiveGames) * 100 : 0,
+  };
+}
+
 export function aggregateMatches(matches) {
   const results = matches.map((match) => ({
     match,
     ...resultForMatch(match),
     ...bestRatedPlayerForMatch(match),
   }));
-  const wins = results.filter((result) => result.outcome === "win").length;
-  const losses = results.filter((result) => result.outcome === "loss").length;
-  const ties = results.filter((result) => result.outcome === "tie").length;
-  const decisiveGames = wins + losses;
-  const winRate = decisiveGames ? (wins / decisiveGames) * 100 : 0;
+  const { wins, losses, ties, decisiveGames, winRate } = summarizeWinRate(matches);
 
   const allStats = matches.flatMap((match) => match.playerStats ?? []);
   const kills = allStats.reduce((sum, stat) => sum + (stat?.total_kills ?? 0), 0);

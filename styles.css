@@ -99,6 +99,7 @@ h1 em::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px;
 .record-strip span { color: var(--muted); font: 10px/1 var(--mono); text-transform: uppercase; text-align: center; border-right: 1px solid var(--line); }.record-strip span:last-child { border: 0; }
 .record-strip b { color: var(--ink); font-size: 15px; }
 .freshness { position: absolute; top: 17px; left: 20px; color: var(--muted); font: 9px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+.win-rate-note { position: absolute; top: 38px; left: 20px; right: 20px; color: var(--muted); font: 11px/1.5 var(--mono); }
 .data-ready .hero-copy { animation: reveal-up .7s cubic-bezier(.2,.8,.2,1) both; }
 .data-ready .score-stage { animation: reveal-up .8s .12s cubic-bezier(.2,.8,.2,1) both; }
 .data-ready .wordmark-logo { animation: mark-in .55s cubic-bezier(.2,.9,.2,1.2) both; }

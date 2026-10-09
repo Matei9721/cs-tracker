@@ -24,4 +24,8 @@ export const SUPABASE_PUBLISHABLE_KEY =
 
 export const TRACKED_MATCH_SOURCES = ["matchmaking", "matchmaking_competitive"];
 export const SEASON_START = "2026-01-21T00:00:00";
+// Fixed Amsterdam calendar day; applies only to the trio's win rate and the bet.
+export const WIN_RATE_EXCLUDED_RANGES = [
+  { start: "2026-10-09T00:00:00+02:00", end: "2026-10-10T00:00:00+02:00" },
+];
 export const MAX_MAP_PICKS = 3;
