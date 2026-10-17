@@ -49,3 +49,28 @@ export async function replaceBallot({ cycleMatchId, voterId, voterName, maps }) 
   });
   return parseResponse(response);
 }
+
+export async function getSeasonArchive() {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_season_archive`, {
+    method: "POST",
+    headers,
+    body: "{}",
+    signal: AbortSignal.timeout(5000),
+  });
+  const archive = await parseResponse(response);
+  if (!archive || !Array.isArray(archive.matches)) {
+    throw new Error("Season archive is not initialized");
+  }
+  return archive;
+}
+
+export async function saveSeasonMatches(matches) {
+  if (!matches.length) return 0;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/archive_season_matches`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ p_matches: matches }),
+    signal: AbortSignal.timeout(10000),
+  });
+  return parseResponse(response);
+}

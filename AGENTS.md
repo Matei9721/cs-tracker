@@ -13,7 +13,7 @@ The season-end stakes are part of the product story: below 66% activates a winte
 - The production site must remain a static site hosted for free on GitHub Pages.
 - Do not add an application backend, server-rendered runtime, paid service, or required scheduled data scraper.
 - Fetch current Leetify data directly in the browser. The public endpoint currently supports browser CORS.
-- Use Supabase only for shared map-vote persistence.
+- Use Supabase for shared map-vote persistence and the season match archive. Archive writes use the restricted `archive_season_matches` RPC; no Edge Function or additional server-side Leetify requests are required.
 - Supabase publishable/anonymous keys and the read-only Leetify Public API application identifier may be present in client code. The Leetify identifier only raises the public-data rate limit and is intentionally public. Never commit a Supabase `service_role` key, database password, account credential, write-capable API key, or other privileged secret.
 - Keep GitHub Pages deployment in `.github/workflows/pages.yml`.
 
@@ -28,7 +28,7 @@ The season-end stakes are part of the product story: below 66% activates a winte
 - Determine the trio's result from the primary player's `initial_team_number` and `team_scores`.
 - Win rate is `wins / (wins + losses)`. Ties are excluded from both numerator and denominator, while they may be shown separately for transparency.
 - Use each player's unmodified `leetify_rating` to identify the highest-rated member of the trio in each game. Multiply ratings by 100 only for display so the values match Leetify's website scale. Show both highest-rating frequency and season-average rating so the carry summary does not overstate a single measure.
-- Do not cache or store Leetify match payloads. Re-fetch them when the page loads.
+- Re-fetch current Leetify histories when the page loads. Preserve compact statistics for confirmed shared matches in Supabase so they survive the 100-match history window; do not persist raw API responses. Read the archive alongside the three histories, merge by match ID, and save only new games in the background.
 - Average games per playing night groups consecutive shared matches into one session when no gap exceeds six hours, so sessions crossing midnight are not split.
 
 ## Map voting

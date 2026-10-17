@@ -19,8 +19,10 @@ import {
   formatMapName,
   summarizeEpisodicGoats,
   winsToReachThreshold,
-} from "./stats.js?v=20261010-match-filter";
-import { getVotes, replaceBallot } from "./supabase.js?v=20260810-carry-metrics";
+  mergeSeasonMatches,
+  seasonArchiveRecords,
+} from "./stats.js?v=20261017-season-archive";
+import { getSeasonArchive, saveSeasonMatches, getVotes, replaceBallot } from "./supabase.js?v=20261017-season-archive";
 
 const $ = (selector) => document.querySelector(selector);
 const VOTING_MAPS = [
@@ -866,14 +868,33 @@ async function initialize() {
   $("#submit-ballot").addEventListener("click", submitBallot);
 
   try {
-    const histories = await Promise.all(PLAYERS.map(fetchMatchHistory));
-    state.matches = buildSharedMatches(
+    // Start the compact archive read alongside Leetify, never after it.
+    const [histories, archiveResult] = await Promise.all([
+      Promise.all(PLAYERS.map(fetchMatchHistory)),
+      getSeasonArchive().then(
+        (data) => ({ data }),
+        (error) => ({ error }),
+      ),
+    ]);
+    const matchOptions = { sources: TRACKED_MATCH_SOURCES, cutoff: new Date(SEASON_START) };
+    const liveMatches = buildSharedMatches(
       histories,
       PLAYERS.map((player) => player.id),
-      { sources: TRACKED_MATCH_SOURCES, cutoff: new Date(SEASON_START) },
+      matchOptions,
+    );
+    state.matches = mergeSeasonMatches(
+      liveMatches, archiveResult.data?.matches ?? [],
+      PLAYERS.map((player) => player.id), matchOptions,
     );
     state.summary = aggregateMatches(state.matches);
     state.cycleMatchId = state.matches[0]?.id ?? null;
+
+    const archiveNotice = archiveResult.error
+      ? "Season archive unavailable. Showing only matches found in the current Leetify histories; older season games may be missing."
+      : !archiveResult.data?.coverage_complete
+        ? "Season archive is active. Older games from this season have not been recovered yet."
+        : "";
+    if (archiveNotice) showStatus(archiveNotice);
 
     if (!state.matches.length) {
       showStatus(
@@ -893,6 +914,13 @@ async function initialize() {
     renderMapBars(state.summary.maps);
     renderRecentMatches(state.summary.results);
     document.body.classList.add("data-ready");
+    // Persistence never delays rendering or changes totals a second time.
+    const archivedIds = new Set((archiveResult.data?.matches ?? []).map((match) => match.id));
+    const newMatches = liveMatches.filter((match) => !archivedIds.has(match.id));
+    if (archiveResult.data && newMatches.length) void saveSeasonMatches(seasonArchiveRecords(newMatches)).catch((error) => {
+      console.error("Season archive sync failed", error);
+      showStatus(`${archiveNotice ? `${archiveNotice} ` : ""}New games could not be saved to the season archive. Refresh later to retry.`);
+    });
     void loadEpisodicGoats(state.matches);
 
     if (state.matches[0]) {

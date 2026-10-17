@@ -65,6 +65,46 @@ export function resultForMatch(match) {
   return { outcome, ourScore: ourTeam.score, theirScore: theirTeam.score };
 }
 
+// Archived rows were captured from the browser's three-history intersection.
+// Live appearances take precedence if Leetify later corrects a score or rating.
+export function mergeSeasonMatches(liveMatches, archive, playerIds, options = {}) {
+  const appearances = archive.map(({ player_stats, ...match }) => ({
+    ...match,
+    stats: player_stats,
+  }));
+  const archivedMatches = buildSharedMatches(
+    playerIds.map(() => appearances), playerIds, options,
+  );
+  const byId = new Map(archivedMatches.map((match) => [match.id, match]));
+  liveMatches.forEach((match) => byId.set(match.id, match));
+  return [...byId.values()].sort(
+    (a, b) => new Date(b.finished_at) - new Date(a.finished_at),
+  );
+}
+
+// Persist only fields needed by the dashboard, never complete API responses.
+export function seasonArchiveRecords(matches) {
+  const fields = [
+    "initial_team_number", "total_kills", "total_deaths", "leetify_rating", "score",
+    "total_hs_kills", "shots_fired", "shots_hit_foe", "total_damage", "rounds_count",
+    "rounds_survived", "trade_kill_opportunities", "trade_kill_attempts", "he_thrown",
+    "flashbang_thrown", "smoke_thrown", "molotov_thrown", "flashbang_hit_foe", "he_foes_damage_avg",
+  ];
+  return matches.map((match) => ({
+    id: match.id,
+    finished_at: match.finished_at,
+    data_source: match.data_source,
+    map_name: match.map_name,
+    team_scores: match.team_scores.map(({ team_number, score }) => ({ team_number, score })),
+    player_stats: match.playerStats.map((stats) => ({
+      steam64_id: stats.steam64_id,
+      ...Object.fromEntries(fields.map((field) => [
+        field, typeof stats[field] === "number" && Number.isFinite(stats[field]) ? stats[field] : null,
+      ])),
+    })),
+  }));
+}
+
 export function bestRatedPlayerForMatch(match) {
   let bestPlayerIndex = null;
   let bestRating = Number.NEGATIVE_INFINITY;

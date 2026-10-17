@@ -1,5 +1,5 @@
 -- Run once in the Supabase SQL Editor.
--- This stores map ballots only. Leetify match data is never persisted.
+-- Map voting setup. Run season-archive.sql separately for the match archive.
 
 create table if not exists public.map_votes (
   cycle_match_id uuid not null,

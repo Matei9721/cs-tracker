@@ -15,12 +15,88 @@ import {
   formatLeetifyRating,
   formatMapName,
   resultForMatch,
+  mergeSeasonMatches,
+  seasonArchiveRecords,
   summarizeEpisodicGoats,
   summarizeMatchMetricLeaders,
   winsToReachThreshold,
 } from "../js/stats.js";
 
 const players = ["1", "2", "3"];
+
+test("archive projection keeps metric inputs and drops unrelated API fields", () => {
+  const matches = buildSharedMatches(players.map((p) => [appearance("game", p, "2026-10-16T12:00:00Z")]), players);
+  matches[0].unneeded_payload = { private: "unused" };
+  matches[0].playerStats.forEach((s) => Object.assign(s, {
+    total_hs_kills: 3, shots_fired: 100, shots_hit_foe: 20, total_damage: 1500,
+    rounds_count: 21, rounds_survived: 8, trade_kill_opportunities: 6, trade_kill_attempts: 5,
+    he_thrown: 2, flashbang_thrown: 4, smoke_thrown: 3, molotov_thrown: 2,
+    flashbang_hit_foe: 3, he_foes_damage_avg: 12.5, score: 20, unneeded_payload: "unused",
+  }));
+  const records = seasonArchiveRecords(matches);
+  assert.equal(records[0].unneeded_payload, undefined);
+  assert.equal(records[0].stats, undefined);
+  assert.equal(records[0].player_stats[0].unneeded_payload, undefined);
+  const restored = mergeSeasonMatches([], records, players);
+  const summary = (list) => { const { results, ...metrics } = aggregateMatches(list); return metrics; };
+  assert.deepEqual(summary(restored), summary(matches));
+});
+
+function archiveRow(match) {
+  const { playerStats, stats, ...record } = match;
+  return { ...record, player_stats: playerStats };
+}
+
+test("archive preserves a loss that rolls out of a player's 100-match history", () => {
+  const options = { now: new Date("2026-10-17T23:00:00Z"), cutoff: new Date("2026-01-21T00:00:00Z") };
+  const previous = players.map((p) => [
+    appearance("old-loss", p, "2026-02-01T12:00:00Z", { scores: [{ team_number: 2, score: 7 }, { team_number: 3, score: 13 }] }),
+    appearance("win", p, "2026-10-16T12:00:00Z"),
+  ]);
+  const archived = buildSharedMatches(previous, players, options).map(archiveRow);
+  const current = players.map((p, i) => [
+    ...previous[i].filter((m) => i !== 1 || m.id !== "old-loss"),
+    appearance("new-loss", p, "2026-10-17T12:00:00Z", { scores: [{ team_number: 2, score: 7 }, { team_number: 3, score: 13 }] }),
+  ]);
+  const live = buildSharedMatches(current, players, options);
+  assert.equal(aggregateMatches(live).winRate, 50);
+  const combined = mergeSeasonMatches(live, archived, players, options);
+  assert.deepEqual(combined.map((m) => m.id), ["new-loss", "win", "old-loss"]);
+  assert.equal(aggregateMatches(combined).losses, 2);
+  assert.ok(Math.abs(aggregateMatches(combined).winRate - 100 / 3) < 1e-10);
+});
+
+test("archive deduplicates games, prefers live corrections, and preserves all aggregate metrics", () => {
+  const options = { now: new Date("2026-10-17T23:00:00Z") };
+  const histories = players.map((p) => [appearance("shared", p, "2026-10-17T12:00:00Z")]);
+  const live = buildSharedMatches(histories, players, options);
+  const archived = live.map(archiveRow);
+  const summaryOnly = (matches) => {
+    const { results, ...summary } = aggregateMatches(matches);
+    return summary;
+  };
+  assert.deepEqual(summaryOnly(mergeSeasonMatches([], archived, players, options)), summaryOnly(live));
+  archived[0].player_stats = archived[0].player_stats.map((s) => ({ ...s, total_kills: 999 }));
+  assert.deepEqual(aggregateMatches(mergeSeasonMatches(live, archived, players, options)), aggregateMatches(live));
+});
+
+test("archived games still obey season, source, configured exclusions, and trio-stat requirements", () => {
+  const makeRecord = (id, date, opts) => archiveRow(buildSharedMatches(
+    players.map((p) => [appearance(id, p, date, opts)]), players,
+    { now: new Date("2027-01-01"), sources: ["matchmaking", "matchmaking_competitive", "faceit"] },
+  )[0]);
+  const rows = [
+    makeRecord("valid", "2026-10-16T12:00:00Z"),
+    makeRecord("old", "2026-01-01T12:00:00Z"),
+    makeRecord("future", "2026-12-01T12:00:00Z"),
+    makeRecord("faceit", "2026-10-16T12:00:00Z", { source: "faceit" }),
+  ];
+  rows.push({ ...rows[0], id: "b37948b6-6a52-4ceb-a34e-d2fab7bb190b" });
+  rows.push({ ...rows[0], id: "missing-player", player_stats: rows[0].player_stats.slice(0, 2) });
+  assert.deepEqual(mergeSeasonMatches([], rows, players, {
+    now: new Date("2026-10-17"), cutoff: new Date("2026-01-21"),
+  }).map((m) => m.id), ["valid"]);
+});
 
 test("keeps the configured display names attached to the correct Steam IDs", () => {
   assert.deepEqual(
